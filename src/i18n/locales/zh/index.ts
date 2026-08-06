@@ -18,6 +18,9 @@ export const zh = {
     wrapperShape: '头像形状',
     borderColor: '边框颜色',
     backgroundColor: '背景颜色',
+    backgroundImage: '背景图',
+    uploadBackgroundImage: '上传背景图',
+    removeBackgroundImage: '移除背景图',
     colors: '颜色',
   },
   widgetType: {

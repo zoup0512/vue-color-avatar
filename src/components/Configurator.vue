@@ -61,6 +61,51 @@
             ></div>
           </li>
         </ul>
+
+        <ul v-if="SETTINGS.backgroundImages.length" class="bg-image-list">
+          <li
+            v-for="img in SETTINGS.backgroundImages"
+            :key="img"
+            class="bg-image-list__item"
+            :class="{ active: img === avatarOption.background.image }"
+            @click="switchBgImage(img)"
+          >
+            <img
+              :src="img"
+              class="bg-image"
+              :alt="t('label.backgroundImage')"
+            />
+          </li>
+        </ul>
+
+        <div class="bg-image-actions">
+          <button type="button" class="bg-image-btn" @click="handlePickImage">
+            {{ t('label.uploadBackgroundImage') }}
+          </button>
+
+          <input
+            ref="fileInputRef"
+            type="file"
+            class="file-input"
+            accept="image/*"
+            @change="handleUploadImage"
+          />
+
+          <template v-if="avatarOption.background.image">
+            <img
+              :src="avatarOption.background.image"
+              class="bg-image-current"
+              :alt="t('label.backgroundImage')"
+            />
+            <button
+              type="button"
+              class="bg-image-btn"
+              @click="removeBackgroundImage"
+            >
+              {{ t('label.removeBackgroundImage') }}
+            </button>
+          </template>
+        </div>
       </SectionWrapper>
 
       <SectionWrapper
@@ -205,10 +250,78 @@ function switchBorderColor(borderColor: string) {
 }
 
 function switchBgColor(bgColor: string) {
-  if (bgColor !== avatarOption.value.background.color) {
+  // 点击颜色时同时清除图片底图，避免图片盖住颜色导致无反馈
+  if (
+    bgColor !== avatarOption.value.background.color ||
+    avatarOption.value.background.image
+  ) {
     setAvatarOption({
       ...avatarOption.value,
-      background: { ...avatarOption.value.background, color: bgColor },
+      background: {
+        ...avatarOption.value.background,
+        color: bgColor,
+        image: undefined,
+      },
+    })
+  }
+}
+
+const fileInputRef = ref<HTMLInputElement>()
+
+function switchBgImage(image: string) {
+  if (image !== avatarOption.value.background.image) {
+    setAvatarOption({
+      ...avatarOption.value,
+      background: { ...avatarOption.value.background, image },
+    })
+  }
+}
+
+function handlePickImage() {
+  fileInputRef.value?.click()
+}
+
+function handleUploadImage(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  // 选择后重置，允许重复选择同一文件
+  input.value = ''
+
+  if (!file) return
+  if (!file.type.startsWith('image/')) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const image = reader.result as string
+
+    // 先确认图片能正常加载再应用，避免不支持格式（如 HEIC）静默失效
+    const probe = new Image()
+    probe.onload = () => {
+      setAvatarOption({
+        ...avatarOption.value,
+        background: {
+          ...avatarOption.value.background,
+          image,
+        },
+      })
+    }
+    probe.onerror = () => {
+      console.warn('Background image failed to load:', file.name)
+    }
+    probe.src = image
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeBackgroundImage() {
+  if (avatarOption.value.background.image) {
+    setAvatarOption({
+      ...avatarOption.value,
+      background: {
+        ...avatarOption.value.background,
+        image: undefined,
+      },
     })
   }
 }
@@ -259,6 +372,7 @@ function getWidgetColor(type: string) {
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .configurator-scroll {
   width: var.$layout-sider-width;
@@ -307,7 +421,7 @@ function getWidgetColor(type: string) {
     margin: 1rem 0 0.5rem 0;
 
     summary {
-      color: darken(var.$color-text, 20);
+      color: color.adjust(var.$color-text, $lightness: -20%);
       font-size: small;
       cursor: pointer;
       user-select: none;
@@ -394,6 +508,67 @@ function getWidgetColor(type: string) {
     }
   }
 
+  .bg-image-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 0.5rem;
+
+    .bg-image-list__item {
+      position: relative;
+      width: calc(100% / 4);
+      padding: 0.4rem;
+      cursor: pointer;
+
+      .bg-image {
+        display: block;
+        width: 100%;
+        height: 2.6rem;
+        object-fit: cover;
+        border-radius: 0.4rem;
+        box-shadow: 0 0 0.05em 0.2em var.$color-configurator;
+      }
+
+      &.active .bg-image {
+        box-shadow: 0 0 0 0.15em var.$color-accent,
+          0 0 0.05em 0.2em var.$color-configurator;
+      }
+    }
+  }
+
+  .bg-image-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+    column-gap: 0.5rem;
+
+    .bg-image-btn {
+      padding: 0.3rem 0.6rem;
+      color: var.$color-text;
+      font-size: small;
+      background: color.adjust(var.$color-configurator, $lightness: 4%);
+      border: none;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background: color.adjust(var.$color-configurator, $lightness: 8%);
+      }
+    }
+
+    .bg-image-current {
+      width: 2.6rem;
+      height: 2.6rem;
+      object-fit: cover;
+      border-radius: 0.4rem;
+    }
+  }
+
+  .file-input {
+    display: none;
+  }
+
   .widget-list {
     display: flex;
     flex-wrap: wrap;
@@ -410,11 +585,11 @@ function getWidgetColor(type: string) {
       transition: background-color 0.2s;
 
       &.selected.selected {
-        background-color: lighten(var.$color-configurator, 6);
+        background-color: color.adjust(var.$color-configurator, $lightness: 6%);
       }
 
       &:hover {
-        background-color: lighten(var.$color-configurator, 0);
+        background-color: color.adjust(var.$color-configurator, $lightness: 0%);
       }
 
       & > :deep(svg) {

@@ -47,6 +47,8 @@ export interface AvatarOption {
   background: {
     color: string
     borderColor: string
+    /** 图片底图（base64 data URL 或同源资源 URL），设置后覆盖 color 作为背景 */
+    image?: string
   }
 
   widgets: Partial<AvatarWidgets>
@@ -72,4 +74,5 @@ export interface AvatarSettings {
   skinColors: string[]
   backgroundColor: string[]
   borderColor: string[]
+  backgroundImages: string[]
 }

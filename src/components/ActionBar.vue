@@ -63,6 +63,7 @@ const actions = computed(() => [
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .action-menu {
   display: flex;
@@ -79,7 +80,7 @@ const actions = computed(() => [
     width: 2.5rem;
     height: 2.5rem;
     margin: 0 0.5rem;
-    background-color: lighten(var.$color-gray, 10);
+    background-color: color.adjust(var.$color-gray, $lightness: 10%);
     border-radius: 50%;
     cursor: pointer;
     transition: opacity 0.2s;

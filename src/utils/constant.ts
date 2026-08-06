@@ -1,3 +1,4 @@
+import backgroundImage1 from '@/assets/backgrounds/1.jpg'
 import type { AvatarOption, AvatarSettings } from '@/types'
 
 import {
@@ -103,6 +104,8 @@ export const SETTINGS: Readonly<AvatarSettings> = {
   get borderColor() {
     return [...this.commonColors, 'transparent']
   },
+
+  backgroundImages: [backgroundImage1],
 }
 
 export const SCREEN = {

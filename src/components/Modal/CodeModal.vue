@@ -52,7 +52,14 @@ const { t } = useI18n()
 
 const [avatarOption] = useAvatarOption()
 
-const codeJSON = computed(() => JSON.stringify(avatarOption.value, null, 4))
+// 配置代码中剔除图片底图的 base64 数据，避免内容过大
+const codeJSON = computed(() =>
+  JSON.stringify(
+    avatarOption.value,
+    (key, value) => (key === 'image' ? undefined : value),
+    4
+  )
+)
 
 const highlightedCode = ref('')
 
@@ -88,6 +95,7 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .code-box {
   $code-header-height: 4rem;
@@ -103,7 +111,7 @@ onUnmounted(() => {
   padding: $code-header-height $code-box-side-padding-normal 2.5rem
     $code-box-side-padding-normal;
   overflow: hidden;
-  background-color: lighten(var.$color-dark, 3);
+  background-color: color.adjust(var.$color-dark, $lightness: 3%);
   border-radius: 1rem;
   transform: translate(-50%, -50%);
   transition: width 0.2s;
@@ -147,7 +155,7 @@ onUnmounted(() => {
       width: 2rem;
       height: 2rem;
       margin-left: auto;
-      background-color: lighten(var.$color-dark, 8);
+      background-color: color.adjust(var.$color-dark, $lightness: 8%);
       border-radius: 50%;
       cursor: pointer;
 
@@ -170,7 +178,7 @@ onUnmounted(() => {
     height: 20rem;
     height: 100%;
     padding: 1rem 0;
-    background: darken(var.$color-dark, 1);
+    background: color.adjust(var.$color-dark, $lightness: -1%);
     border-radius: 0.8rem;
 
     .code-scroll-wrapper {
@@ -204,6 +212,7 @@ onUnmounted(() => {
 
 <style lang="scss">
 @use 'src/styles/var';
+@use 'sass:color';
 
 .code-content {
   display: block;

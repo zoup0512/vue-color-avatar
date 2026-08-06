@@ -9,7 +9,10 @@
     }"
     :class="getWrapperShapeClassName()"
   >
-    <Background :color="avatarOption.background.color" />
+    <Background
+      :color="avatarOption.background.color"
+      :image="avatarOption.background.image"
+    />
 
     <div class="avatar-payload" v-html="svgContent" />
 

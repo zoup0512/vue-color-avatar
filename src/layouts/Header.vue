@@ -35,6 +35,7 @@ import { recordEvent } from '@/utils/ga'
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .header {
   display: flex;
@@ -74,7 +75,7 @@ import { recordEvent } from '@/utils/ga'
       user-select: none;
 
       &:hover {
-        background-color: darken(var.$color-dark, 3);
+        background-color: color.adjust(var.$color-dark, $lightness: -3%);
       }
 
       .text {

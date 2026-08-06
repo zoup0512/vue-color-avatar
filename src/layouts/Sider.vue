@@ -17,6 +17,7 @@ const { isCollapsed, openSider, closeSider } = useSider()
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .sider {
   position: fixed;
@@ -59,7 +60,7 @@ const { isCollapsed, openSider, closeSider } = useSider()
 
     &:hover {
       width: 1.5rem;
-      background-color: lighten(var.$color-configurator, 5);
+      background-color: color.adjust(var.$color-configurator, $lightness: 5%);
     }
   }
 }

@@ -79,6 +79,8 @@ export function getRandomAvatarOption(
         avoid: [useOption.background?.color],
         usually: ['transparent'],
       }),
+      // 随机生成时保留用户选择的图片底图
+      image: presetOption.background?.image,
     },
 
     widgets: {

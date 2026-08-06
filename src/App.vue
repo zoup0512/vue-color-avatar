@@ -137,6 +137,7 @@ function handleGenerate() {
       colorfulOption = getSpecialAvatarOption()
     }
     colorfulOption.wrapperShape = avatarOption.value.wrapperShape
+    colorfulOption.background.image = avatarOption.value.background.image
     setAvatarOption(colorfulOption)
     showConfetti()
   } else {
@@ -271,6 +272,7 @@ async function generateMultiple(count = 5 * 6) {
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .main {
   width: 100%;
@@ -338,7 +340,7 @@ async function generateMultiple(count = 5 * 6) {
       user-select: none;
 
       &:hover {
-        color: lighten(var.$color-text, 10);
+        color: color.adjust(var.$color-text, $lightness: 10%);
       }
 
       &:disabled,

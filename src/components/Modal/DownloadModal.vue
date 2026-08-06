@@ -38,6 +38,7 @@ const { t } = useI18n()
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .download-modal-wrapper {
   position: fixed;
@@ -64,7 +65,7 @@ const { t } = useI18n()
   width: 50%;
   min-width: 310px;
   max-width: 500px;
-  background-color: darken(var.$color-dark, 1);
+  background-color: color.adjust(var.$color-dark, $lightness: -1%);
   border: 0.15rem solid rgba(var.$color-accent, 0.8);
   border-radius: 1rem;
 
@@ -125,7 +126,7 @@ const { t } = useI18n()
     user-select: none;
 
     &:hover {
-      color: lighten(var.$color-text, 10);
+      color: color.adjust(var.$color-text, $lightness: 10%);
       transform: translateY(-0.3rem);
     }
   }

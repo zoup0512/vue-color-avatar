@@ -138,6 +138,7 @@ async function make() {
 
 <style lang="scss" scoped>
 @use 'src/styles/var';
+@use 'sass:color';
 
 .container {
   position: absolute;
@@ -145,7 +146,7 @@ async function make() {
   left: 50%;
   height: min(90vh, 1000px);
   overflow: hidden;
-  background-color: lighten(var.$color-dark, 3);
+  background-color: color.adjust(var.$color-dark, $lightness: 3%);
   border-radius: 1rem;
   transform: translate(-50%, -50%);
 
@@ -160,7 +161,7 @@ async function make() {
     align-items: center;
     height: $top-bar-height;
     padding: 1rem 2rem;
-    background-color: lighten(var.$color-dark, 6);
+    background-color: color.adjust(var.$color-dark, $lightness: 6%);
 
     .right {
       display: flex;
@@ -237,7 +238,7 @@ async function make() {
         user-select: none;
 
         &:hover {
-          color: lighten(var.$color-text, 10);
+          color: color.adjust(var.$color-text, $lightness: 10%);
         }
       }
 

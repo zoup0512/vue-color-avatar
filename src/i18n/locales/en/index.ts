@@ -18,6 +18,9 @@ export const en = {
     wrapperShape: 'Avatar Shape',
     borderColor: 'Border Color',
     backgroundColor: 'Background Color',
+    backgroundImage: 'Background Image',
+    uploadBackgroundImage: 'Upload Image',
+    removeBackgroundImage: 'Remove Image',
     colors: 'colors',
   },
   widgetType: {
