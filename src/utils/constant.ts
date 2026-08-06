@@ -30,7 +30,7 @@ export const AVATAR_LAYER: Readonly<{
     zIndex: 103,
   },
   [WidgetType.Eyebrows]: {
-    zIndex: 70,
+    zIndex: 91,
   },
   [WidgetType.Eyes]: {
     zIndex: 50,
