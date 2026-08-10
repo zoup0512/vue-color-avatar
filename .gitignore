@@ -1,6 +1,9 @@
 node_modules
 .DS_Store
 dist
+.deploy
+# 服务器 SSL 私钥，严禁提交！
+deploy/nginx/certificates/
 dist-ssr
 *.local
 yarn-error.log

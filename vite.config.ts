@@ -5,6 +5,10 @@ import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // 部署在 https://www.razor123.site/avatar/ 子路径下，资源 URL 必须加前缀
+  // （需与服务器 nginx 的 location /avatar/ 对应，否则 js/css 全部 404）
+  base: '/avatar/',
+
   plugins: [
     vue(),
     ...(mode === 'prerelease'

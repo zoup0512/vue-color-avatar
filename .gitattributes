@@ -1,0 +1,2 @@
+# 保证 shell 脚本在 Windows / Linux 检出时都是 LF 行尾（否则 bash 报 '\r' 错误）
+*.sh text eol=lf
