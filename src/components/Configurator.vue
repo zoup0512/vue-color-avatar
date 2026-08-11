@@ -1,171 +1,221 @@
 <template>
-  <PerfectScrollbar class="configurator-scroll">
-    <div class="configurator">
-      <SectionWrapper :title="t('label.wrapperShape')">
-        <ul class="wrapper-shape">
-          <li
-            v-for="wrapperShape in SETTINGS.wrapperShape"
-            :key="wrapperShape"
-            class="wrapper-shape__item"
-            :title="t(`wrapperShape.${wrapperShape}`)"
-            @click="switchWrapperShape(wrapperShape)"
-          >
-            <div
-              class="shape"
-              :class="[
-                wrapperShape,
-                { active: wrapperShape === avatarOption.wrapperShape },
-              ]"
-            />
-          </li>
-        </ul>
-      </SectionWrapper>
-
-      <SectionWrapper :title="t('label.borderColor')">
-        <ul class="color-list">
-          <li
-            v-for="borderColor in SETTINGS.borderColor"
-            :key="borderColor"
-            class="color-list__item"
-            @click="switchBorderColor(borderColor)"
-          >
-            <div
-              :style="{ background: borderColor }"
-              class="bg-color"
-              :class="[
-                {
-                  active: borderColor === avatarOption.background.borderColor,
-                  transparent: borderColor === 'transparent',
-                },
-              ]"
-            />
-          </li>
-        </ul>
-      </SectionWrapper>
-
-      <SectionWrapper :title="t('label.backgroundColor')">
-        <ul class="color-list">
-          <li
-            v-for="bgColor in SETTINGS.backgroundColor"
-            :key="bgColor"
-            class="color-list__item"
-            @click="switchBgColor(bgColor)"
-          >
-            <div
-              :style="{ background: bgColor }"
-              class="bg-color"
-              :class="{
-                active: bgColor === avatarOption.background.color,
-                transparent: bgColor === 'transparent',
-              }"
-            ></div>
-          </li>
-        </ul>
-
-        <ul v-if="SETTINGS.backgroundImages.length" class="bg-image-list">
-          <li
-            v-for="img in SETTINGS.backgroundImages"
-            :key="img"
-            class="bg-image-list__item"
-            :class="{ active: img === avatarOption.background.image }"
-            @click="switchBgImage(img)"
-          >
-            <img
-              :src="img"
-              class="bg-image"
-              :alt="t('label.backgroundImage')"
-            />
-          </li>
-        </ul>
-
-        <div class="bg-image-actions">
-          <button type="button" class="bg-image-btn" @click="handlePickImage">
-            {{ t('label.uploadBackgroundImage') }}
-          </button>
-
-          <input
-            ref="fileInputRef"
-            type="file"
-            class="file-input"
-            accept="image/*"
-            @change="handleUploadImage"
-          />
-
-          <template v-if="avatarOption.background.image">
-            <img
-              :src="avatarOption.background.image"
-              class="bg-image-current"
-              :alt="t('label.backgroundImage')"
-            />
-            <button
-              type="button"
-              class="bg-image-btn"
-              @click="removeBackgroundImage"
-            >
-              {{ t('label.removeBackgroundImage') }}
-            </button>
-          </template>
-        </div>
-      </SectionWrapper>
-
-      <SectionWrapper
-        v-for="s in sections"
-        :key="s.widgetType"
-        :title="t(`widgetType.${s.widgetType}`)"
+  <div class="configurator-shell">
+    <div class="configurator-tabs" role="tablist">
+      <button
+        id="svg-generator-tab"
+        type="button"
+        role="tab"
+        class="configurator-tab"
+        :class="{ active: store.editorMode === 'svg' }"
+        :aria-selected="store.editorMode === 'svg'"
+        aria-controls="svg-generator-panel"
+        @click="switchEditorMode('svg')"
       >
-        <details
-          v-if="
-            s.widgetType === WidgetType.Tops ||
-            s.widgetType === WidgetType.Face ||
-            s.widgetType === WidgetType.Clothes
-          "
-          class="color-picker"
-          :open="s.widgetType === WidgetType.Face"
-        >
-          <summary class="color">{{ t('label.colors') }}</summary>
-          <ul class="color-list">
+        {{ t('tab.svgGenerator') }}
+      </button>
+      <button
+        id="ai-generator-tab"
+        type="button"
+        role="tab"
+        class="configurator-tab"
+        :class="{ active: store.editorMode === 'ai' }"
+        :aria-selected="store.editorMode === 'ai'"
+        aria-controls="ai-generator-panel"
+        @click="switchEditorMode('ai')"
+      >
+        {{ t('tab.aiGenerator') }}
+      </button>
+    </div>
+
+    <PerfectScrollbar ref="scrollbarRef" class="configurator-scroll">
+      <div
+        v-show="store.editorMode === 'ai'"
+        id="ai-generator-panel"
+        role="tabpanel"
+        aria-labelledby="ai-generator-tab"
+      >
+        <AIImageGenerator />
+      </div>
+
+      <div
+        v-show="store.editorMode === 'svg'"
+        id="svg-generator-panel"
+        class="configurator"
+        role="tabpanel"
+        aria-labelledby="svg-generator-tab"
+      >
+        <SectionWrapper :title="t('label.wrapperShape')">
+          <ul class="wrapper-shape">
             <li
-              v-for="fillColor in SETTINGS[
-                s.widgetType === WidgetType.Face ? 'skinColors' : 'commonColors'
-              ]"
-              :key="fillColor"
-              class="color-list__item"
-              @click="setWidgetColor(s.widgetType, fillColor)"
+              v-for="wrapperShape in SETTINGS.wrapperShape"
+              :key="wrapperShape"
+              class="wrapper-shape__item"
+              :title="t(`wrapperShape.${wrapperShape}`)"
+              @click="switchWrapperShape(wrapperShape)"
             >
               <div
-                :style="{ background: fillColor }"
-                class="bg-color"
-                :class="{
-                  active: fillColor === getWidgetColor(s.widgetType),
-                }"
+                class="shape"
+                :class="[
+                  wrapperShape,
+                  { active: wrapperShape === avatarOption.wrapperShape },
+                ]"
               />
             </li>
           </ul>
-        </details>
+        </SectionWrapper>
 
-        <ul class="widget-list">
-          <li
-            v-for="it in s.widgetList"
-            :key="it.widgetShape"
-            class="list-item"
-            :class="{
-              selected:
-                it.widgetShape === avatarOption.widgets?.[s.widgetType]?.shape,
-            }"
-            @click="switchWidget(s.widgetType, it.widgetShape)"
-            v-html="it.svgRaw"
-          />
-        </ul>
-      </SectionWrapper>
-    </div>
-  </PerfectScrollbar>
+        <SectionWrapper :title="t('label.borderColor')">
+          <ul class="color-list">
+            <li
+              v-for="borderColor in SETTINGS.borderColor"
+              :key="borderColor"
+              class="color-list__item"
+              @click="switchBorderColor(borderColor)"
+            >
+              <div
+                :style="{ background: borderColor }"
+                class="bg-color"
+                :class="[
+                  {
+                    active: borderColor === avatarOption.background.borderColor,
+                    transparent: borderColor === 'transparent',
+                  },
+                ]"
+              />
+            </li>
+          </ul>
+        </SectionWrapper>
+
+        <SectionWrapper :title="t('label.backgroundColor')">
+          <ul class="color-list">
+            <li
+              v-for="bgColor in SETTINGS.backgroundColor"
+              :key="bgColor"
+              class="color-list__item"
+              @click="switchBgColor(bgColor)"
+            >
+              <div
+                :style="{ background: bgColor }"
+                class="bg-color"
+                :class="{
+                  active: bgColor === avatarOption.background.color,
+                  transparent: bgColor === 'transparent',
+                }"
+              ></div>
+            </li>
+          </ul>
+
+          <ul v-if="SETTINGS.backgroundImages.length" class="bg-image-list">
+            <li
+              v-for="img in SETTINGS.backgroundImages"
+              :key="img"
+              class="bg-image-list__item"
+              :class="{ active: img === avatarOption.background.image }"
+              @click="switchBgImage(img)"
+            >
+              <img
+                :src="img"
+                class="bg-image"
+                :alt="t('label.backgroundImage')"
+              />
+            </li>
+          </ul>
+
+          <div class="bg-image-actions">
+            <button type="button" class="bg-image-btn" @click="handlePickImage">
+              {{ t('label.uploadBackgroundImage') }}
+            </button>
+
+            <input
+              ref="fileInputRef"
+              type="file"
+              class="file-input"
+              accept="image/*"
+              @change="handleUploadImage"
+            />
+
+            <template v-if="avatarOption.background.image">
+              <img
+                :src="avatarOption.background.image"
+                class="bg-image-current"
+                :alt="t('label.backgroundImage')"
+              />
+              <button
+                type="button"
+                class="bg-image-btn"
+                @click="removeBackgroundImage"
+              >
+                {{ t('label.removeBackgroundImage') }}
+              </button>
+            </template>
+          </div>
+        </SectionWrapper>
+
+        <SectionWrapper
+          v-for="s in sections"
+          :key="s.widgetType"
+          :title="t(`widgetType.${s.widgetType}`)"
+        >
+          <details
+            v-if="
+              s.widgetType === WidgetType.Tops ||
+              s.widgetType === WidgetType.Face ||
+              s.widgetType === WidgetType.Clothes
+            "
+            class="color-picker"
+            :open="s.widgetType === WidgetType.Face"
+          >
+            <summary class="color">{{ t('label.colors') }}</summary>
+            <ul class="color-list">
+              <li
+                v-for="fillColor in SETTINGS[
+                  s.widgetType === WidgetType.Face
+                    ? 'skinColors'
+                    : 'commonColors'
+                ]"
+                :key="fillColor"
+                class="color-list__item"
+                @click="setWidgetColor(s.widgetType, fillColor)"
+              >
+                <div
+                  :style="{ background: fillColor }"
+                  class="bg-color"
+                  :class="{
+                    active: fillColor === getWidgetColor(s.widgetType),
+                  }"
+                />
+              </li>
+            </ul>
+          </details>
+
+          <ul class="widget-list">
+            <li
+              v-for="it in s.widgetList"
+              :key="it.widgetShape"
+              class="list-item"
+              :class="{
+                selected:
+                  it.widgetShape ===
+                  avatarOption.widgets?.[s.widgetType]?.shape,
+              }"
+              @click="switchWidget(s.widgetType, it.widgetShape)"
+              v-html="it.svgRaw"
+            />
+          </ul>
+        </SectionWrapper>
+      </div>
+    </PerfectScrollbar>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import PerfectScrollbar from '@/components/PerfectScrollbar.vue'
+import AIImageGenerator from '@/components/AIImageGenerator.vue'
+import PerfectScrollbar, {
+  type PerfectScrollbarRef,
+} from '@/components/PerfectScrollbar.vue'
 import SectionWrapper from '@/components/SectionWrapper.vue'
 import {
   type WidgetShape,
@@ -174,12 +224,24 @@ import {
   WidgetType,
 } from '@/enums'
 import { useAvatarOption } from '@/hooks'
+import { type EditorMode, useStore } from '@/store'
+import { SET_EDITOR_MODE } from '@/store/mutation-type'
 import { AVATAR_LAYER, SETTINGS } from '@/utils/constant'
 import { previewData } from '@/utils/dynamic-data'
 
 const { t } = useI18n()
+const store = useStore()
 
 const [avatarOption, setAvatarOption] = useAvatarOption()
+const scrollbarRef = ref<PerfectScrollbarRef>()
+
+async function switchEditorMode(mode: EditorMode) {
+  if (mode === store.editorMode) return
+
+  store[SET_EDITOR_MODE](mode)
+  await nextTick()
+  scrollbarRef.value?.update(true)
+}
 
 const sectionList = reactive(Object.values(WidgetType))
 const sections = ref<
@@ -207,6 +269,9 @@ onMounted(() => {
         widgetList: a[i],
       }
     })
+
+    await nextTick()
+    scrollbarRef.value?.update()
   })()
 })
 
@@ -374,13 +439,51 @@ function getWidgetColor(type: string) {
 @use 'src/styles/var';
 @use 'sass:color';
 
-.configurator-scroll {
+.configurator-shell {
+  display: flex;
+  flex-direction: column;
   width: var.$layout-sider-width;
   height: 100%;
+  color: var.$color-text;
+  background-color: var.$color-configurator;
+}
 
-  @media screen and (max-width: var.$screen-lg) {
-    background-color: var.$color-configurator;
+.configurator-tabs {
+  display: flex;
+  flex-shrink: 0;
+  padding: 0.6rem;
+  column-gap: 0.5rem;
+  border-bottom: 1px solid color.adjust(var.$color-dark, $lightness: 10%);
+}
+
+.configurator-tab {
+  flex: 1;
+  padding: 0.7rem 0.4rem;
+  color: var.$color-text;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 0.45rem;
+  outline: none;
+  transition: color 0.2s, background-color 0.2s;
+
+  &:hover,
+  &:focus-visible {
+    background-color: color.adjust(var.$color-dark, $lightness: 7%);
   }
+
+  &.active {
+    color: #fff;
+    font-weight: bold;
+    background-color: var.$color-primary;
+  }
+}
+
+.configurator-scroll {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
 }
 
 .configurator {

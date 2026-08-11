@@ -11,6 +11,10 @@
                 ref="colorAvatarRef"
                 :option="avatarOption"
                 :size="280"
+                :generated-image="
+                  store.editorMode === 'ai' ? store.generatedImage : ''
+                "
+                :generated-image-alt="t('label.aiGeneratedImage')"
                 :style="{
                   transform: `rotateY(${flipped ? -180 : 0}deg)`,
                 }"
@@ -103,7 +107,7 @@ import Footer from '@/layouts/Footer.vue'
 import Header from '@/layouts/Header.vue'
 import Sider from '@/layouts/Sider.vue'
 import { useStore } from '@/store'
-import { REDO, UNDO } from '@/store/mutation-type'
+import { CLEAR_GENERATED_IMAGE, REDO, UNDO } from '@/store/mutation-type'
 import {
   getRandomAvatarOption,
   getSpecialAvatarOption,
@@ -165,11 +169,15 @@ async function handleDownload() {
     )
 
     if (avatarEle) {
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(avatarEle, {
-        backgroundColor: null,
-      })
-      const dataURL = canvas.toDataURL()
+      let dataURL = store.editorMode === 'ai' ? store.generatedImage : ''
+
+      if (!dataURL) {
+        const html2canvas = (await import('html2canvas')).default
+        const canvas = await html2canvas(avatarEle, {
+          backgroundColor: null,
+        })
+        dataURL = canvas.toDataURL()
+      }
 
       if (notCompatible) {
         imageDataURL.value = dataURL
@@ -240,6 +248,8 @@ watchEffect(() => {
 })
 
 async function generateMultiple(count = 5 * 6) {
+  store[CLEAR_GENERATED_IMAGE]()
+
   const { default: hash } = await import('object-hash')
 
   const avatarMap = [...Array(count)].reduce<Map<string, AvatarOption>>(

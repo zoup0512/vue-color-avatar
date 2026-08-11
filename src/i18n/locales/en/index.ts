@@ -13,6 +13,13 @@ export const en = {
     copied: 'Copied',
     downloading: 'Downloading',
     close: 'Close',
+    uploadReferenceImage: 'Upload Reference',
+    replaceReferenceImage: 'Replace Reference',
+    removeReferenceImage: 'Remove Reference',
+    generateAIImage: 'Generate with AI',
+    regenerateAIImage: 'Regenerate',
+    generatingAIImage: 'Generating...',
+    returnToSVG: 'Return to SVG Editor',
   },
   label: {
     wrapperShape: 'Avatar Shape',
@@ -22,6 +29,25 @@ export const en = {
     uploadBackgroundImage: 'Upload Image',
     removeBackgroundImage: 'Remove Image',
     colors: 'colors',
+    aiImageGeneration: 'AI Image Generation',
+    referenceImage: 'Reference Image',
+    aiGeneratedImage: 'AI Generated Avatar',
+    aiPrompt: 'Generation Prompt',
+    aiGender: 'Character Gender',
+    aiPromptTemplate: 'Template Style',
+  },
+  gender: {
+    female: 'Female',
+    male: 'Male',
+  },
+  aiPromptTemplate: {
+    cute: 'Cute',
+    cool: 'Cool',
+    traditional: 'Traditional',
+  },
+  tab: {
+    svgGenerator: 'Avatar Editor',
+    aiGenerator: 'AI Generator',
   },
   widgetType: {
     [WidgetType.Face]: 'Face',
@@ -48,5 +74,20 @@ export const en = {
     downloadingMultiple: 'Downloading',
     downloadMultipleTip: 'Automatically generated',
     regenerate: 'Regenerate',
+    aiPromptPlaceholder:
+      'Describe the hairstyle, clothes, accessories, and background',
+    aiPromptCount: '{current} / {max}',
+    aiError: {
+      invalid_file: 'Please select a valid image file',
+      file_too_large: 'The image must be no larger than 10 MB',
+      image_load_failed:
+        'The image could not be read. Try a JPG, PNG, or WebP file',
+      invalid_prompt: 'Please enter a generation prompt',
+      api_key_missing: 'The API key has not been configured on the server',
+      violation: 'The request did not pass the safety check. Adjust the prompt',
+      network_error: 'Network connection failed. Please try again later',
+      timeout: 'Generation timed out. Please try again later',
+      generate_failed: 'Avatar generation failed. Please try again later',
+    },
   },
 }

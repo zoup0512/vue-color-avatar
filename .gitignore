@@ -6,7 +6,12 @@ dist
 deploy/nginx/certificates/
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
 yarn-error.log
 stats.html
 coverage
 /.idea/
+/.zcode/
+/gui-test-screenshots/
