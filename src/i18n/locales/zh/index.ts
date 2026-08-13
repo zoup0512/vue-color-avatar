@@ -20,6 +20,7 @@ export const zh = {
     regenerateAIImage: '重新生成',
     generatingAIImage: '正在生成...',
     returnToSVG: '返回 SVG 编辑',
+    clearGeneratedImages: '清空历史',
   },
   label: {
     wrapperShape: '头像形状',
@@ -32,6 +33,7 @@ export const zh = {
     aiImageGeneration: 'AI 图生图',
     referenceImage: '参考底模',
     aiGeneratedImage: 'AI 生成头像',
+    aiGeneratedImages: '生成历史',
     aiPrompt: '生成要求',
     aiGender: '角色性别',
     aiPromptTemplate: '模板风格',

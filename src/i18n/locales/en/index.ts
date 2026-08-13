@@ -20,6 +20,7 @@ export const en = {
     regenerateAIImage: 'Regenerate',
     generatingAIImage: 'Generating...',
     returnToSVG: 'Return to SVG Editor',
+    clearGeneratedImages: 'Clear History',
   },
   label: {
     wrapperShape: 'Avatar Shape',
@@ -32,6 +33,7 @@ export const en = {
     aiImageGeneration: 'AI Image Generation',
     referenceImage: 'Reference Image',
     aiGeneratedImage: 'AI Generated Avatar',
+    aiGeneratedImages: 'Generation History',
     aiPrompt: 'Generation Prompt',
     aiGender: 'Character Gender',
     aiPromptTemplate: 'Template Style',

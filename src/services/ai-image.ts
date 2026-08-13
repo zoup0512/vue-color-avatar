@@ -90,15 +90,7 @@ function loadImage(source: string) {
   })
 }
 
-export async function prepareReferenceImage(file: File) {
-  if (!file.type.startsWith('image/')) {
-    throw new AIImageError('invalid_file')
-  }
-  if (file.size > MAX_SOURCE_FILE_SIZE) {
-    throw new AIImageError('file_too_large')
-  }
-
-  const source = await readFileAsDataURL(file)
+async function processImageSource(source: string) {
   const image = await loadImage(source)
   const scale = Math.min(
     1,
@@ -120,6 +112,23 @@ export async function prepareReferenceImage(file: File) {
   context.drawImage(image, 0, 0, width, height)
 
   return canvas.toDataURL('image/jpeg', 0.9)
+}
+
+export async function prepareReferenceImage(file: File) {
+  if (!file.type.startsWith('image/')) {
+    throw new AIImageError('invalid_file')
+  }
+  if (file.size > MAX_SOURCE_FILE_SIZE) {
+    throw new AIImageError('file_too_large')
+  }
+
+  const source = await readFileAsDataURL(file)
+  return processImageSource(source)
+}
+
+/** 将默认底模等内置参考图资源处理为可用于生成的 data URL */
+export async function prepareReferenceImageFromUrl(url: string) {
+  return processImageSource(url)
 }
 
 function normalizeErrorCode(code?: string): AIImageErrorCode {

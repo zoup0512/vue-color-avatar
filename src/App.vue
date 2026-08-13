@@ -21,6 +21,8 @@
               />
             </div>
 
+            <GeneratedImagesPanel />
+
             <ActionBar @action="handleAction" />
 
             <div class="action-group">
@@ -94,6 +96,7 @@ import { useI18n } from 'vue-i18n'
 
 import ActionBar from '@/components/ActionBar.vue'
 import Configurator from '@/components/Configurator.vue'
+import GeneratedImagesPanel from '@/components/GeneratedImagesPanel.vue'
 import BatchDownloadModal from '@/components/Modal/BatchDownloadModal.vue'
 import CodeModal from '@/components/Modal/CodeModal.vue'
 import DownloadModal from '@/components/Modal/DownloadModal.vue'
@@ -158,6 +161,18 @@ const downloadModalVisible = ref(false)
 const downloading = ref(false)
 const imageDataURL = ref('')
 
+/** 生成下载文件名：AI 生图携带时间戳，避免多次下载相互覆盖 */
+function getDownloadFileName() {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const timestamp =
+    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+    `_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+  return store.editorMode === 'ai'
+    ? `${appName}_${timestamp}.png`
+    : `${appName}.png`
+}
+
 async function handleDownload() {
   try {
     downloading.value = true
@@ -185,7 +200,7 @@ async function handleDownload() {
       } else {
         const trigger = document.createElement('a')
         trigger.href = dataURL
-        trigger.download = `${appName}.png`
+        trigger.download = getDownloadFileName()
         trigger.click()
       }
     }
@@ -307,6 +322,7 @@ async function generateMultiple(count = 5 * 6) {
 }
 
 .playground {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;

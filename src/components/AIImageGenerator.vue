@@ -124,9 +124,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import defaultReferenceImageUrl from '@/assets/ai-reference-default.jpg'
 import SectionWrapper from '@/components/SectionWrapper.vue'
 import {
   type AIGender,
@@ -140,6 +141,7 @@ import {
   generateAIImage,
   MAX_AI_PROMPT_LENGTH,
   prepareReferenceImage,
+  prepareReferenceImageFromUrl,
 } from '@/services/ai-image'
 import { useStore } from '@/store'
 import { SET_GENERATED_IMAGE } from '@/store/mutation-type'
@@ -165,6 +167,17 @@ const generatedImage = computed(() => store.generatedImage)
 const errorText = computed(() =>
   errorCode.value ? t(`text.aiError.${errorCode.value}`) : ''
 )
+
+onMounted(async () => {
+  // 预加载默认底模，作为 AI 图生图的初始参考图
+  try {
+    referenceImage.value = await prepareReferenceImageFromUrl(
+      defaultReferenceImageUrl
+    )
+  } catch {
+    // 默认底模加载失败时保持空参考图，不影响后续手动上传
+  }
+})
 
 async function handleSelectImage(event: Event) {
   const input = event.target as HTMLInputElement

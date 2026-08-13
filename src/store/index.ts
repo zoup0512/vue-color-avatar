@@ -7,8 +7,10 @@ import { SCREEN } from '@/utils/constant'
 
 import {
   CLEAR_GENERATED_IMAGE,
+  CLEAR_GENERATED_IMAGES,
   REDO,
   SET_AVATAR_OPTION,
+  SET_CURRENT_GENERATED_IMAGE,
   SET_EDITOR_MODE,
   SET_GENERATED_IMAGE,
   SET_SIDER_STATUS,
@@ -26,6 +28,7 @@ export interface State {
   isSiderCollapsed: boolean
   editorMode: EditorMode
   generatedImage: string
+  generatedImages: string[]
 }
 
 export const useStore = defineStore('store', {
@@ -39,6 +42,7 @@ export const useStore = defineStore('store', {
       isSiderCollapsed: window.innerWidth <= SCREEN.lg,
       editorMode: 'svg',
       generatedImage: '',
+      generatedImages: [],
     } as State),
   actions: {
     [SET_AVATAR_OPTION](data: AvatarOption) {
@@ -58,11 +62,21 @@ export const useStore = defineStore('store', {
     [SET_GENERATED_IMAGE](image: string) {
       this.editorMode = 'ai'
       this.generatedImage = image
+      this.generatedImages.push(image)
+    },
+
+    [SET_CURRENT_GENERATED_IMAGE](image: string) {
+      this.editorMode = 'ai'
+      this.generatedImage = image
     },
 
     [CLEAR_GENERATED_IMAGE]() {
       this.editorMode = 'svg'
       this.generatedImage = ''
+    },
+
+    [CLEAR_GENERATED_IMAGES]() {
+      this.generatedImages = []
     },
 
     [UNDO]() {
