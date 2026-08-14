@@ -1,6 +1,7 @@
 import { Gender } from '@/enums'
 
 const GENERATE_API_URL = '/avatar/api/generate'
+const HISTORY_API_URL = '/avatar/api/history'
 const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024
 const MAX_IMAGE_SIDE = 1600
 
@@ -180,4 +181,27 @@ export async function generateAIImage(image: string, prompt: string) {
   }
 
   return result.image
+}
+
+/** 拉取服务器端保存的生图历史（最新在前）；失败时静默返回空列表 */
+export async function loadGeneratedImageHistory(): Promise<string[]> {
+  try {
+    const response = await fetch(HISTORY_API_URL)
+    if (!response.ok) return []
+
+    const result = (await response.json()) as { images?: string[] }
+    return Array.isArray(result.images) ? result.images : []
+  } catch {
+    return []
+  }
+}
+
+/** 删除服务器端全部生图历史；成功返回 true */
+export async function clearGeneratedImageHistory(): Promise<boolean> {
+  try {
+    const response = await fetch(HISTORY_API_URL, { method: 'DELETE' })
+    return response.ok
+  } catch {
+    return false
+  }
 }

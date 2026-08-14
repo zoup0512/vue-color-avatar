@@ -43,6 +43,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { clearGeneratedImageHistory } from '@/services/ai-image'
 import { useStore } from '@/store'
 import {
   CLEAR_GENERATED_IMAGES,
@@ -58,7 +59,9 @@ function handleSelect(image: string) {
   store[SET_CURRENT_GENERATED_IMAGE](image)
 }
 
-function handleClear() {
+async function handleClear() {
+  // 同步删除服务器端保存的历史；失败时仅清空本地列表
+  await clearGeneratedImageHistory()
   store[CLEAR_GENERATED_IMAGES]()
 }
 </script>

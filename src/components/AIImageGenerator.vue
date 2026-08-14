@@ -139,12 +139,16 @@ import {
   DEFAULT_AI_GENDER,
   DEFAULT_AI_TEMPLATE_ID,
   generateAIImage,
+  loadGeneratedImageHistory,
   MAX_AI_PROMPT_LENGTH,
   prepareReferenceImage,
   prepareReferenceImageFromUrl,
 } from '@/services/ai-image'
 import { useStore } from '@/store'
-import { SET_GENERATED_IMAGE } from '@/store/mutation-type'
+import {
+  SET_GENERATED_IMAGE,
+  SET_GENERATED_IMAGES,
+} from '@/store/mutation-type'
 
 const { t } = useI18n()
 const store = useStore()
@@ -176,6 +180,12 @@ onMounted(async () => {
     )
   } catch {
     // 默认底模加载失败时保持空参考图，不影响后续手动上传
+  }
+
+  // 拉取服务器端保存的生图历史，填充右侧历史面板（接口返回最新在前，反转后按旧→新存储）
+  const history = await loadGeneratedImageHistory()
+  if (history.length > 0) {
+    store[SET_GENERATED_IMAGES]([...history].reverse())
   }
 })
 

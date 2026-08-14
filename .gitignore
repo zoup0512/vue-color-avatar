@@ -2,6 +2,8 @@ node_modules
 .DS_Store
 dist
 .deploy
+# 本地开发时服务端保存的生图历史（服务器端存 /var/data/avatar-history）
+server/data/
 # 服务器 SSL 私钥，严禁提交！
 deploy/nginx/certificates/
 dist-ssr

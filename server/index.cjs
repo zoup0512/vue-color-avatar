@@ -2,7 +2,9 @@
 
 require('dotenv/config')
 
+const fs = require('node:fs')
 const http = require('node:http')
+const path = require('node:path')
 const {
   AdapterError,
   MAX_IMAGE_BYTES,
@@ -14,8 +16,16 @@ const {
   validateDownloadUrl,
   validateGenerateInput,
 } = require('./grsai.cjs')
+const {
+  clearHistory,
+  listHistory,
+  resolveHistoryFile,
+  saveGeneratedImage,
+} = require('./history.cjs')
 
 const ROUTE = '/avatar/api/generate'
+const HISTORY_ROUTE = '/avatar/api/history'
+const HISTORY_FILE_PREFIX = '/avatar/api/history/files/'
 const MAX_REQUEST_BYTES = Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 16 * 1024
 const MAX_UPSTREAM_RESPONSE_BYTES = 1024 * 1024
 const MAX_DOWNLOAD_BYTES = 16 * 1024 * 1024
@@ -194,30 +204,87 @@ async function generateImage(input, apiKey) {
   }
 }
 
+/** 生图成功后自动保存历史（保存失败不阻断生图响应） */
+async function persistGeneratedImage(image) {
+  try {
+    await saveGeneratedImage(image)
+  } catch (error) {
+    console.error('[history] failed to save generated image:', error.message)
+  }
+}
+
+/** 返回历史图片文件（仅限按天目录下的合法文件名，防路径穿越） */
+async function serveHistoryFile(response, day, name) {
+  const filePath = resolveHistoryFile(day, name)
+  if (!filePath) {
+    throw new AdapterError(404, 'NOT_FOUND', 'File not found')
+  }
+
+  let stat
+  try {
+    stat = await fs.promises.stat(filePath)
+  } catch {
+    throw new AdapterError(404, 'NOT_FOUND', 'File not found')
+  }
+  if (!stat.isFile()) {
+    throw new AdapterError(404, 'NOT_FOUND', 'File not found')
+  }
+
+  const ext = path.extname(name).slice(1)
+  response.writeHead(200, {
+    'Content-Type': ext === 'jpg' ? 'image/jpeg' : `image/${ext}`,
+    'Content-Length': stat.size,
+    // 文件名含唯一时间戳，内容不可变，可长期缓存
+    'Cache-Control': 'public, max-age=31536000, immutable',
+  })
+  fs.createReadStream(filePath).pipe(response)
+}
+
 async function handleRequest(request, response) {
   try {
     const url = new URL(request.url || '/', 'http://localhost')
-    if (url.pathname !== ROUTE) {
-      throw new AdapterError(404, 'NOT_FOUND', 'Route not found')
+    const method = request.method || 'GET'
+
+    if (url.pathname === ROUTE) {
+      if (method !== 'POST') {
+        response.setHeader('Allow', 'POST')
+        throw new AdapterError(405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
+      }
+
+      if (!isJsonContentType(request.headers['content-type'])) {
+        throw new AdapterError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/json')
+      }
+
+      const apiKey = process.env.GRSAI_API_KEY
+      if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+        throw new AdapterError(503, 'SERVICE_NOT_CONFIGURED', 'Image generation service is not configured')
+      }
+
+      const input = validateGenerateInput(await readJsonRequest(request))
+      const result = await generateImage(input, apiKey.trim())
+      await persistGeneratedImage(result.image)
+      sendJson(response, 200, result)
+      return
     }
 
-    if (request.method !== 'POST') {
-      response.setHeader('Allow', 'POST')
-      throw new AdapterError(405, 'METHOD_NOT_ALLOWED', 'Method not allowed')
+    if (method === 'GET' && url.pathname === HISTORY_ROUTE) {
+      sendJson(response, 200, { images: await listHistory() })
+      return
     }
 
-    if (!isJsonContentType(request.headers['content-type'])) {
-      throw new AdapterError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/json')
+    if (method === 'DELETE' && url.pathname === HISTORY_ROUTE) {
+      await clearHistory()
+      sendJson(response, 200, { ok: true })
+      return
     }
 
-    const apiKey = process.env.GRSAI_API_KEY
-    if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
-      throw new AdapterError(503, 'SERVICE_NOT_CONFIGURED', 'Image generation service is not configured')
+    if (method === 'GET' && url.pathname.startsWith(HISTORY_FILE_PREFIX)) {
+      const [day, name] = url.pathname.slice(HISTORY_FILE_PREFIX.length).split('/')
+      await serveHistoryFile(response, day, name)
+      return
     }
 
-    const input = validateGenerateInput(await readJsonRequest(request))
-    const result = await generateImage(input, apiKey.trim())
-    sendJson(response, 200, result)
+    throw new AdapterError(404, 'NOT_FOUND', 'Route not found')
   } catch (error) {
     const normalized =
       error instanceof AdapterError

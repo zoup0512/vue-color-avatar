@@ -8,6 +8,7 @@ import {
   SET_CURRENT_GENERATED_IMAGE,
   SET_EDITOR_MODE,
   SET_GENERATED_IMAGE,
+  SET_GENERATED_IMAGES,
 } from '../store/mutation-type'
 
 describe('editor mode', () => {
@@ -101,5 +102,21 @@ describe('generated image history', () => {
     expect(store.generatedImages).toEqual([])
     expect(store.generatedImage).toBe('data:image/png;base64,aW1hZ2U2=')
     expect(store.editorMode).toBe('ai')
+  })
+
+  test('bulk loading the server history does not change the mode', () => {
+    const store = useStore()
+
+    store[SET_GENERATED_IMAGES]([
+      '/avatar/api/history/files/20260813/20260813_153045_ab12.png',
+      '/avatar/api/history/files/20260814/20260814_093021_cd34.png',
+    ])
+
+    expect(store.generatedImages).toEqual([
+      '/avatar/api/history/files/20260813/20260813_153045_ab12.png',
+      '/avatar/api/history/files/20260814/20260814_093021_cd34.png',
+    ])
+    expect(store.editorMode).toBe('svg')
+    expect(store.generatedImage).toBe('')
   })
 })

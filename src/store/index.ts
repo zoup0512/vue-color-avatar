@@ -13,6 +13,7 @@ import {
   SET_CURRENT_GENERATED_IMAGE,
   SET_EDITOR_MODE,
   SET_GENERATED_IMAGE,
+  SET_GENERATED_IMAGES,
   SET_SIDER_STATUS,
   UNDO,
 } from './mutation-type'
@@ -63,6 +64,11 @@ export const useStore = defineStore('store', {
       this.editorMode = 'ai'
       this.generatedImage = image
       this.generatedImages.push(image)
+    },
+
+    [SET_GENERATED_IMAGES](images: string[]) {
+      // 批量载入服务器端保存的历史（旧 → 新），不切换编辑模式
+      this.generatedImages = images
     },
 
     [SET_CURRENT_GENERATED_IMAGE](image: string) {
