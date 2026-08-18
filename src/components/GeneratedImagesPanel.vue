@@ -6,14 +6,6 @@
   >
     <div class="panel-header">
       <span class="panel-title">{{ t('label.aiGeneratedImages') }}</span>
-      <button
-        type="button"
-        class="clear-btn"
-        :title="t('action.clearGeneratedImages')"
-        @click="handleClear"
-      >
-        {{ t('action.clearGeneratedImages') }}
-      </button>
     </div>
 
     <ul class="image-list">
@@ -36,6 +28,15 @@
         </button>
       </li>
     </ul>
+
+    <button
+      type="button"
+      class="clear-btn"
+      :title="t('action.clearGeneratedImages')"
+      @click="handleClear"
+    >
+      {{ t('action.clearGeneratedImages') }}
+    </button>
   </aside>
 </template>
 
@@ -85,33 +86,32 @@ async function handleClear() {
   box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.35);
 
   .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    column-gap: 0.3rem;
+    text-align: center;
 
     .panel-title {
       font-size: 0.78rem;
       font-weight: bold;
       white-space: nowrap;
     }
+  }
 
-    .clear-btn {
-      padding: 0.1rem 0.3rem;
-      color: color.adjust(var.$color-text, $lightness: -10%);
-      font: inherit;
-      font-size: 0.7rem;
-      white-space: nowrap;
-      cursor: pointer;
-      background: transparent;
-      border: 0;
-      border-radius: 0.3rem;
+  .clear-btn {
+    flex-shrink: 0;
+    padding: 0.25rem 0;
+    color: color.adjust(var.$color-text, $lightness: -10%);
+    font: inherit;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 0.3rem;
 
-      &:hover,
-      &:focus-visible {
-        color: var.$color-text;
-        outline: none;
-      }
+    &:hover,
+    &:focus-visible {
+      color: var.$color-text;
+      background: color.adjust(var.$color-dark, $lightness: 12%);
+      outline: none;
     }
   }
 
