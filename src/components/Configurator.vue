@@ -2,18 +2,6 @@
   <div class="configurator-shell">
     <div class="configurator-tabs" role="tablist">
       <button
-        id="svg-generator-tab"
-        type="button"
-        role="tab"
-        class="configurator-tab"
-        :class="{ active: store.editorMode === 'svg' }"
-        :aria-selected="store.editorMode === 'svg'"
-        aria-controls="svg-generator-panel"
-        @click="switchEditorMode('svg')"
-      >
-        {{ t('tab.svgGenerator') }}
-      </button>
-      <button
         id="ai-generator-tab"
         type="button"
         role="tab"
@@ -24,6 +12,18 @@
         @click="switchEditorMode('ai')"
       >
         {{ t('tab.aiGenerator') }}
+      </button>
+      <button
+        id="svg-generator-tab"
+        type="button"
+        role="tab"
+        class="configurator-tab"
+        :class="{ active: store.editorMode === 'svg' }"
+        :aria-selected="store.editorMode === 'svg'"
+        aria-controls="svg-generator-panel"
+        @click="switchEditorMode('svg')"
+      >
+        {{ t('tab.svgGenerator') }}
       </button>
     </div>
 

@@ -4,11 +4,13 @@ import { useStore } from '../store'
 import {
   CLEAR_GENERATED_IMAGE,
   CLEAR_GENERATED_IMAGES,
+  REDO,
   SET_AVATAR_OPTION,
   SET_CURRENT_GENERATED_IMAGE,
   SET_EDITOR_MODE,
   SET_GENERATED_IMAGE,
   SET_GENERATED_IMAGES,
+  UNDO,
 } from '../store/mutation-type'
 
 describe('editor mode', () => {
@@ -16,8 +18,8 @@ describe('editor mode', () => {
     setActivePinia(createPinia())
   })
 
-  test('starts in SVG mode', () => {
-    expect(useStore().editorMode).toBe('svg')
+  test('starts in AI mode', () => {
+    expect(useStore().editorMode).toBe('ai')
   })
 
   test('keeps the generated image when switching tabs', () => {
@@ -107,6 +109,7 @@ describe('generated image history', () => {
   test('bulk loading the server history does not change the mode', () => {
     const store = useStore()
 
+    store[SET_EDITOR_MODE]('svg')
     store[SET_GENERATED_IMAGES]([
       '/avatar/api/history/files/20260813/20260813_153045_ab12.png',
       '/avatar/api/history/files/20260814/20260814_093021_cd34.png',
@@ -118,5 +121,104 @@ describe('generated image history', () => {
     ])
     expect(store.editorMode).toBe('svg')
     expect(store.generatedImage).toBe('')
+  })
+})
+
+describe('AI mode undo/redo', () => {
+  const IMAGE_A = 'data:image/png;base64,aW1hZ2U='
+  const IMAGE_B = 'data:image/png;base64,aW1hZ2Uy='
+  const IMAGE_C = 'data:image/png;base64,aW1hZ2Uz='
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  function generateThreeImages() {
+    const store = useStore()
+    store[SET_GENERATED_IMAGE](IMAGE_A)
+    store[SET_GENERATED_IMAGE](IMAGE_B)
+    store[SET_GENERATED_IMAGE](IMAGE_C)
+    return store
+  }
+
+  test('undo steps back through generated images and stays in AI mode', () => {
+    const store = generateThreeImages()
+
+    store[UNDO]()
+
+    expect(store.generatedImage).toBe(IMAGE_B)
+    expect(store.editorMode).toBe('ai')
+  })
+
+  test('redo restores the undone image', () => {
+    const store = generateThreeImages()
+
+    store[UNDO]()
+    store[REDO]()
+
+    expect(store.generatedImage).toBe(IMAGE_C)
+    expect(store.editorMode).toBe('ai')
+  })
+
+  test('undo is a no-op at the oldest image', () => {
+    const store = generateThreeImages()
+
+    store[UNDO]()
+    store[UNDO]()
+    store[UNDO]()
+
+    expect(store.generatedImage).toBe(IMAGE_A)
+  })
+
+  test('generating a new image after undo clears the redo stack', () => {
+    const store = generateThreeImages()
+
+    store[UNDO]()
+    store[UNDO]()
+    store[SET_GENERATED_IMAGE]('data:image/png;base64,bmV3')
+    store[REDO]()
+
+    expect(store.generatedImage).toBe('data:image/png;base64,bmV3')
+  })
+
+  test('selecting an image from the panel clears the redo stack', () => {
+    const store = generateThreeImages()
+
+    store[UNDO]()
+    store[SET_CURRENT_GENERATED_IMAGE](IMAGE_C)
+    store[REDO]()
+
+    expect(store.generatedImage).toBe(IMAGE_C)
+  })
+
+  test('clearing the history resets the redo stack', () => {
+    const store = generateThreeImages()
+
+    store[UNDO]()
+    store[CLEAR_GENERATED_IMAGES]()
+    store[REDO]()
+
+    expect(store.generatedImage).toBe(IMAGE_B)
+  })
+
+  test('SVG mode undo still works on avatar options without switching modes', () => {
+    const store = useStore()
+    const present = store.history.present
+    const edited = {
+      ...present,
+      background: { ...present.background, color: '#fff' },
+    }
+
+    store[SET_AVATAR_OPTION](edited)
+    store[SET_EDITOR_MODE]('ai')
+    store[SET_EDITOR_MODE]('svg')
+    store[UNDO]()
+
+    expect(store.history.present).toEqual(present)
+    expect(store.editorMode).toBe('svg')
+
+    store[REDO]()
+    expect(store.history.present).toEqual(edited)
+    expect(store.editorMode).toBe('svg')
   })
 })

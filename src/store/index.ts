@@ -30,6 +30,8 @@ export interface State {
   editorMode: EditorMode
   generatedImage: string
   generatedImages: string[]
+  /** AI 模式撤销后可还原的图片在 generatedImages 中的下标 */
+  generatedImageRedoStack: number[]
 }
 
 export const useStore = defineStore('store', {
@@ -41,9 +43,10 @@ export const useStore = defineStore('store', {
         future: [],
       },
       isSiderCollapsed: window.innerWidth <= SCREEN.lg,
-      editorMode: 'svg',
+      editorMode: 'ai',
       generatedImage: '',
       generatedImages: [],
+      generatedImageRedoStack: [],
     } as State),
   actions: {
     [SET_AVATAR_OPTION](data: AvatarOption) {
@@ -64,6 +67,7 @@ export const useStore = defineStore('store', {
       this.editorMode = 'ai'
       this.generatedImage = image
       this.generatedImages.push(image)
+      this.generatedImageRedoStack = []
     },
 
     [SET_GENERATED_IMAGES](images: string[]) {
@@ -74,6 +78,7 @@ export const useStore = defineStore('store', {
     [SET_CURRENT_GENERATED_IMAGE](image: string) {
       this.editorMode = 'ai'
       this.generatedImage = image
+      this.generatedImageRedoStack = []
     },
 
     [CLEAR_GENERATED_IMAGE]() {
@@ -83,15 +88,26 @@ export const useStore = defineStore('store', {
 
     [CLEAR_GENERATED_IMAGES]() {
       this.generatedImages = []
+      this.generatedImageRedoStack = []
     },
 
     [UNDO]() {
-      this.editorMode = 'svg'
-      this.generatedImage = ''
+      // AI 模式下撤销是在生成历史中回退一张，不切换编辑模式
+      if (this.editorMode === 'ai') {
+        const index = this.generatedImages.indexOf(this.generatedImage)
+        if (index > 0) {
+          this.generatedImageRedoStack = [
+            ...this.generatedImageRedoStack,
+            index,
+          ]
+          this.generatedImage = this.generatedImages[index - 1]
+        }
+        return
+      }
 
       if (this.history.past.length > 0) {
         const previous = this.history.past[this.history.past.length - 1]
-        const newPast = this.history.past.slice(0, this.history.past.length - 1)
+        const newPast = this.history.past.slice(0, -1)
         this.history = {
           past: newPast,
           present: previous,
@@ -101,8 +117,21 @@ export const useStore = defineStore('store', {
     },
 
     [REDO]() {
-      this.editorMode = 'svg'
-      this.generatedImage = ''
+      // AI 模式下还原是重新显示刚撤销的生成图片，不切换编辑模式
+      if (this.editorMode === 'ai') {
+        if (this.generatedImageRedoStack.length > 0) {
+          const index =
+            this.generatedImageRedoStack[
+              this.generatedImageRedoStack.length - 1
+            ]
+          this.generatedImageRedoStack = this.generatedImageRedoStack.slice(
+            0,
+            -1
+          )
+          this.generatedImage = this.generatedImages[index]
+        }
+        return
+      }
 
       if (this.history.future.length > 0) {
         const next = this.history.future[0]
