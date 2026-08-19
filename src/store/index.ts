@@ -11,6 +11,7 @@ import {
   CLEAR_GENERATED_IMAGES,
   REDO,
   SET_AI_BATCH_MODAL_VISIBLE,
+  SET_AI_TEMPLATE_SEED_PROMPT,
   SET_AVATAR_OPTION,
   SET_CURRENT_GENERATED_IMAGE,
   SET_EDITOR_MODE,
@@ -38,6 +39,8 @@ export interface State {
   generatedImageRedoStack: number[]
   /** AI 模板批量生成弹窗的开闭状态（顶部操作栏与侧栏共用） */
   aiBatchModalVisible: boolean
+  /** 从生图 Prompt 卡片发起「存为模板」时，待带入新模板的 prompt */
+  aiTemplateSeedPrompt: string
 }
 
 export const useStore = defineStore('store', {
@@ -55,6 +58,7 @@ export const useStore = defineStore('store', {
       generatedImagePrompts: {},
       generatedImageRedoStack: [],
       aiBatchModalVisible: false,
+      aiTemplateSeedPrompt: '',
     } as State),
   actions: {
     [SET_AVATAR_OPTION](data: AvatarOption) {
@@ -174,6 +178,10 @@ export const useStore = defineStore('store', {
 
     [SET_AI_BATCH_MODAL_VISIBLE](visible: boolean) {
       this.aiBatchModalVisible = visible
+    },
+
+    [SET_AI_TEMPLATE_SEED_PROMPT](prompt: string) {
+      this.aiTemplateSeedPrompt = prompt
     },
   },
 })

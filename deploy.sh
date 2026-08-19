@@ -42,7 +42,8 @@ if [ "$DRY_RUN" -ne 1 ] && [ -z "$SERVER_HOST" ]; then
 fi
 
 # 注意: ssh 用 -p，scp 用 -P，端口参数不能混用
-COMMON_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new"
+# BatchMode 禁止交互式密码提示：免密失效时快速失败，而不是挂起等待输入
+COMMON_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
 SSH_OPTS="$COMMON_OPTS -p $SERVER_PORT"
 SCP_OPTS="$COMMON_OPTS -P $SERVER_PORT"
 if [ -n "$SSH_KEY" ]; then

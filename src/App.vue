@@ -26,11 +26,29 @@
                 :aria-label="t('label.aiImagePrompt')"
               >
                 <div class="prompt-card-title">
-                  {{ t('label.aiImagePrompt') }}
+                  <span class="title-text">{{ t('label.aiImagePrompt') }}</span>
+                  <button
+                    type="button"
+                    class="card-action-btn"
+                    :disabled="!currentGeneratedImagePrompt"
+                    @click="handleCopyPrompt"
+                  >
+                    {{
+                      promptCopied ? t('action.copied') : t('action.copyPrompt')
+                    }}
+                  </button>
                 </div>
                 <p class="prompt-card-text">
                   {{ currentGeneratedImagePrompt || t('text.aiPromptMissing') }}
                 </p>
+                <button
+                  type="button"
+                  class="card-action-btn save-template-btn"
+                  :disabled="!currentGeneratedImagePrompt"
+                  @click="handleSavePromptAsTemplate"
+                >
+                  {{ t('action.savePromptAsTemplate') }}
+                </button>
               </aside>
             </div>
 
@@ -123,7 +141,13 @@ import Footer from '@/layouts/Footer.vue'
 import Header from '@/layouts/Header.vue'
 import Sider from '@/layouts/Sider.vue'
 import { useStore } from '@/store'
-import { REDO, SET_AI_BATCH_MODAL_VISIBLE, UNDO } from '@/store/mutation-type'
+import {
+  REDO,
+  SET_AI_BATCH_MODAL_VISIBLE,
+  SET_AI_TEMPLATE_SEED_PROMPT,
+  SET_SIDER_STATUS,
+  UNDO,
+} from '@/store/mutation-type'
 import {
   getRandomAvatarOption,
   getSpecialAvatarOption,
@@ -155,6 +179,50 @@ const showPromptCard = computed(
 const currentGeneratedImagePrompt = computed(
   () => store.generatedImagePrompts[store.generatedImage] ?? ''
 )
+
+const promptCopied = ref(false)
+let promptCopiedTimer: ReturnType<typeof setTimeout> | undefined
+
+/** 复制当前生图 prompt；优先用剪贴板 API，旧环境回退到隐藏文本域 */
+async function handleCopyPrompt() {
+  const prompt = currentGeneratedImagePrompt.value
+  if (!prompt) return
+
+  let succeeded = false
+  try {
+    await navigator.clipboard.writeText(prompt)
+    succeeded = true
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = prompt
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    succeeded = document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
+
+  if (succeeded) {
+    promptCopied.value = true
+    if (promptCopiedTimer) clearTimeout(promptCopiedTimer)
+    promptCopiedTimer = setTimeout(() => {
+      promptCopied.value = false
+    }, 1600)
+  }
+}
+
+/** 把当前生图 prompt 带入侧栏的模板命名表单，创建自定义模板 */
+function handleSavePromptAsTemplate() {
+  const prompt = currentGeneratedImagePrompt.value
+  if (!prompt) return
+
+  // 侧栏若处于折叠状态先展开，保证命名表单可见
+  if (store.isSiderCollapsed) {
+    store[SET_SIDER_STATUS](false)
+  }
+  store[SET_AI_TEMPLATE_SEED_PROMPT](prompt)
+}
 
 function handleGenerate() {
   if (Math.random() <= TRIGGER_PROBABILITY) {
@@ -383,11 +451,20 @@ async function generateMultiple(count = 5 * 6) {
       box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.35);
 
       .prompt-card-title {
+        display: flex;
         flex-shrink: 0;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: 0.4rem;
-        color: color.adjust(var.$color-text, $lightness: -12%);
-        font-size: 0.78rem;
-        font-weight: bold;
+
+        .title-text {
+          overflow: hidden;
+          color: color.adjust(var.$color-text, $lightness: -12%);
+          font-size: 0.78rem;
+          font-weight: bold;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
       }
 
       .prompt-card-text {
@@ -408,6 +485,38 @@ async function generateMultiple(count = 5 * 6) {
           background: color.adjust(var.$color-dark, $lightness: 20%);
           border-radius: 2px;
         }
+      }
+
+      .card-action-btn {
+        flex-shrink: 0;
+        padding: 0.15rem 0.45rem;
+        color: var.$color-text;
+        font: inherit;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        cursor: pointer;
+        background: color.adjust(var.$color-dark, $lightness: 12%);
+        border: 0;
+        border-radius: 0.35rem;
+        outline: none;
+
+        &:hover:not(:disabled),
+        &:focus-visible {
+          background: color.adjust(var.$color-dark, $lightness: 18%);
+          outline: 1px solid var.$color-primary;
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.45;
+        }
+      }
+
+      .save-template-btn {
+        flex: 1 0 auto;
+        width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.35rem 0;
       }
 
       @media screen and (max-width: var.$screen-md) {

@@ -26,6 +26,8 @@ export const zh = {
     stopBatchGenerate: '停止',
     createCustomTemplate: '新建模板',
     saveAsCustomTemplate: '另存为自定义模板',
+    savePromptAsTemplate: '存为模板',
+    copyPrompt: '复制',
     deleteCustomTemplate: '删除模板',
     confirm: '确定',
     cancel: '取消',
@@ -98,6 +100,8 @@ export const zh = {
     aiPromptPlaceholder: '描述希望添加的发型、服装、饰品和背景',
     aiPromptCount: '{current} / {max}',
     aiPromptMissing: '该图片未记录生成要求',
+    templateSeedHint:
+      '将用当前展示图片的生图 Prompt 创建新模板，两个性别初始相同，创建后可分别编辑。',
     customTemplateNameRequired: '请输入模板名称',
     customTemplateNameDuplicate: '已存在同名模板，请更换名称',
     customTemplateLimitReached: '自定义模板最多 {max} 个',

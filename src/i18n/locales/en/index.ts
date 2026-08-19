@@ -26,6 +26,8 @@ export const en = {
     stopBatchGenerate: 'Stop',
     createCustomTemplate: 'New Template',
     saveAsCustomTemplate: 'Save as Custom Template',
+    savePromptAsTemplate: 'Save as Template',
+    copyPrompt: 'Copy',
     deleteCustomTemplate: 'Delete template',
     confirm: 'Confirm',
     cancel: 'Cancel',
@@ -99,6 +101,8 @@ export const en = {
       'Describe the hairstyle, clothes, accessories, and background',
     aiPromptCount: '{current} / {max}',
     aiPromptMissing: 'No prompt recorded for this image',
+    templateSeedHint:
+      'A new template will be created from the displayed image prompt, identical for both genders at first and editable separately afterwards.',
     customTemplateNameRequired: 'Please enter a template name',
     customTemplateNameDuplicate:
       'A template with this name already exists. Use another name',

@@ -5,6 +5,7 @@ import {
   CLEAR_GENERATED_IMAGE,
   CLEAR_GENERATED_IMAGES,
   REDO,
+  SET_AI_TEMPLATE_SEED_PROMPT,
   SET_AVATAR_OPTION,
   SET_CURRENT_GENERATED_IMAGE,
   SET_EDITOR_MODE,
@@ -123,6 +124,18 @@ describe('generated image history', () => {
 
     store[CLEAR_GENERATED_IMAGES]()
     expect(store.generatedImagePrompts).toEqual({})
+  })
+
+  test('holds the prompt seed for creating a custom template', () => {
+    const store = useStore()
+
+    expect(store.aiTemplateSeedPrompt).toBe('')
+
+    store[SET_AI_TEMPLATE_SEED_PROMPT]('生成完整的可爱 Q 版女孩头像')
+    expect(store.aiTemplateSeedPrompt).toBe('生成完整的可爱 Q 版女孩头像')
+
+    store[SET_AI_TEMPLATE_SEED_PROMPT]('')
+    expect(store.aiTemplateSeedPrompt).toBe('')
   })
 
   test('bulk loading the server history does not change the mode', () => {

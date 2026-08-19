@@ -105,6 +105,9 @@
           </button>
         </div>
 
+        <p v-if="namingMode === 'seed'" class="seed-hint">
+          {{ t('text.templateSeedHint') }}
+        </p>
         <div v-if="namingMode" class="template-naming">
           <input
             v-model="templateNameInput"
@@ -244,6 +247,7 @@ import {
 import { useStore } from '@/store'
 import {
   SET_AI_BATCH_MODAL_VISIBLE,
+  SET_AI_TEMPLATE_SEED_PROMPT,
   SET_CURRENT_GENERATED_IMAGE,
   SET_GENERATED_IMAGE,
   SET_GENERATED_IMAGES,
@@ -263,8 +267,9 @@ const customTemplates = ref<AICustomTemplate[]>([])
 const singleGenerating = ref(false)
 const errorCode = ref('')
 
-// 自定义模板命名表单：create 为从零新建，saveAs 为把当前模板另存为自定义模板
-const namingMode = ref<'create' | 'saveAs' | null>(null)
+// 自定义模板命名表单：create 为从零新建，saveAs 为把当前模板另存为自定义模板，
+// seed 为把生图 Prompt 卡片带来的 prompt 存成新模板
+const namingMode = ref<'create' | 'saveAs' | 'seed' | null>(null)
 const templateNameInput = ref('')
 const templateNameError = ref('')
 
@@ -361,6 +366,24 @@ watch(prompt, () => {
   }, 600)
 })
 
+// 生图 Prompt 卡片的「存为模板」：seed 一旦写入即打开命名表单，确认后创建模板
+watch(
+  () => store.aiTemplateSeedPrompt,
+  (seed) => {
+    if (!seed) return
+
+    if (generating.value) {
+      // 生成中不接受新模板命名，直接清掉 seed 避免表单被锁死
+      store[SET_AI_TEMPLATE_SEED_PROMPT]('')
+      return
+    }
+
+    namingMode.value = 'seed'
+    templateNameInput.value = ''
+    templateNameError.value = ''
+  }
+)
+
 function startCreateTemplate() {
   namingMode.value = 'create'
   templateNameInput.value = ''
@@ -374,6 +397,9 @@ function startSaveAsTemplate() {
 }
 
 function cancelTemplateNaming() {
+  if (namingMode.value === 'seed') {
+    store[SET_AI_TEMPLATE_SEED_PROMPT]('')
+  }
   namingMode.value = null
   templateNameInput.value = ''
   templateNameError.value = ''
@@ -398,6 +424,8 @@ function confirmTemplateNaming() {
     return
   }
 
+  const seedPrompt =
+    namingMode.value === 'seed' ? store.aiTemplateSeedPrompt : ''
   const prompts =
     namingMode.value === 'saveAs'
       ? // 另存为：把当前模板（内置或自定义）两个性别的草稿一起带过去
@@ -406,6 +434,12 @@ function confirmTemplateNaming() {
             promptDrafts[Gender.Female][selectedTemplateId.value] ?? '',
           [Gender.Male]:
             promptDrafts[Gender.Male][selectedTemplateId.value] ?? '',
+        } as Record<AIGender, string>)
+      : namingMode.value === 'seed'
+      ? // 从生图 Prompt 卡片新建：两个性别都用该 prompt，之后可分别编辑
+        ({
+          [Gender.Female]: seedPrompt,
+          [Gender.Male]: seedPrompt,
         } as Record<AIGender, string>)
       : ({ [Gender.Female]: '', [Gender.Male]: '' } as Record<AIGender, string>)
 
@@ -638,6 +672,13 @@ function handleBatchProgress(progress: { current: number; total: number }) {
 
   .name-error {
     margin: 0;
+  }
+
+  .seed-hint {
+    margin: -0.3rem 0 0;
+    color: color.adjust(var.$color-text, $lightness: -15%);
+    font-size: 0.75rem;
+    line-height: 1.4;
   }
 
   .prompt-input {
