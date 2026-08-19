@@ -43,8 +43,9 @@ fi
 
 # 注意: ssh 用 -p，scp 用 -P，端口参数不能混用
 # BatchMode 禁止交互式密码提示：免密失效时快速失败，而不是挂起等待输入
+# -n 把 stdin 定向到 /dev/null：在 CI/管道等 stdin 不关闭的环境里，ssh 会阻塞读 stdin 导致脚本挂起
 COMMON_OPTS="-o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
-SSH_OPTS="$COMMON_OPTS -p $SERVER_PORT"
+SSH_OPTS="$COMMON_OPTS -n -p $SERVER_PORT"
 SCP_OPTS="$COMMON_OPTS -P $SERVER_PORT"
 if [ -n "$SSH_KEY" ]; then
   SSH_OPTS="$SSH_OPTS -i $SSH_KEY"
