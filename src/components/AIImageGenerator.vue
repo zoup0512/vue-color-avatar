@@ -146,6 +146,7 @@ import {
 } from '@/services/ai-image'
 import { useStore } from '@/store'
 import {
+  SET_CURRENT_GENERATED_IMAGE,
   SET_GENERATED_IMAGE,
   SET_GENERATED_IMAGES,
 } from '@/store/mutation-type'
@@ -186,6 +187,8 @@ onMounted(async () => {
   const history = await loadGeneratedImageHistory()
   if (history.length > 0) {
     store[SET_GENERATED_IMAGES]([...history].reverse())
+    // 默认展示最新一张历史生图，避免 AI 模式回退显示普通头像
+    store[SET_CURRENT_GENERATED_IMAGE](history[0])
   }
 })
 
