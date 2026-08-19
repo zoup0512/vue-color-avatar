@@ -97,7 +97,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'generated', image: string): void
+  (e: 'generated', image: string, prompt: string): void
   (e: 'update:running', value: boolean): void
   (e: 'progress', progress: { current: number; total: number }): void
 }>()
@@ -223,7 +223,7 @@ async function start() {
         props.referenceImage,
         getPrompt(templateId)
       )
-      emit('generated', image)
+      emit('generated', image, getPrompt(templateId))
       successCount.value += 1
       statuses[templateId] = 'done'
     } catch {

@@ -321,14 +321,45 @@ export async function generateAIImage(image: string, prompt: string) {
   return result.image
 }
 
+/** 一张历史生图的记录：图片地址与生成它时使用的 prompt */
+export interface GeneratedImageRecord {
+  url: string
+  prompt: string
+}
+
+function parseHistoryImages(raw: unknown): GeneratedImageRecord[] {
+  if (!Array.isArray(raw)) return []
+
+  const records: GeneratedImageRecord[] = []
+  for (const item of raw) {
+    // 兼容旧版服务端返回的纯 URL 数组（无 prompt）
+    if (typeof item === 'string') {
+      records.push({ url: item, prompt: '' })
+    } else if (
+      item &&
+      typeof item === 'object' &&
+      typeof (item as { url?: unknown }).url === 'string'
+    ) {
+      const record = item as { url: string; prompt?: unknown }
+      records.push({
+        url: record.url,
+        prompt: typeof record.prompt === 'string' ? record.prompt : '',
+      })
+    }
+  }
+  return records
+}
+
 /** 拉取服务器端保存的生图历史（最新在前）；失败时静默返回空列表 */
-export async function loadGeneratedImageHistory(): Promise<string[]> {
+export async function loadGeneratedImageHistory(): Promise<
+  GeneratedImageRecord[]
+> {
   try {
     const response = await fetch(HISTORY_API_URL)
     if (!response.ok) return []
 
-    const result = (await response.json()) as { images?: string[] }
-    return Array.isArray(result.images) ? result.images : []
+    const result = (await response.json()) as { images?: unknown }
+    return parseHistoryImages(result.images)
   } catch {
     return []
   }

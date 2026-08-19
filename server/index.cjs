@@ -204,10 +204,10 @@ async function generateImage(input, apiKey) {
   }
 }
 
-/** 生图成功后自动保存历史（保存失败不阻断生图响应） */
-async function persistGeneratedImage(image) {
+/** 生图成功后自动保存历史（含生图 prompt；保存失败不阻断生图响应） */
+async function persistGeneratedImage(image, prompt) {
   try {
-    await saveGeneratedImage(image)
+    await saveGeneratedImage(image, prompt)
   } catch (error) {
     console.error('[history] failed to save generated image:', error.message)
   }
@@ -262,7 +262,7 @@ async function handleRequest(request, response) {
 
       const input = validateGenerateInput(await readJsonRequest(request))
       const result = await generateImage(input, apiKey.trim())
-      await persistGeneratedImage(result.image)
+      await persistGeneratedImage(result.image, input.prompt)
       sendJson(response, 200, result)
       return
     }

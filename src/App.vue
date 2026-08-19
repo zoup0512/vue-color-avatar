@@ -19,6 +19,19 @@
                   transform: `rotateY(${flipped ? -180 : 0}deg)`,
                 }"
               />
+
+              <aside
+                v-if="showPromptCard"
+                class="ai-prompt-card"
+                :aria-label="t('label.aiImagePrompt')"
+              >
+                <div class="prompt-card-title">
+                  {{ t('label.aiImagePrompt') }}
+                </div>
+                <p class="prompt-card-text">
+                  {{ currentGeneratedImagePrompt || t('text.aiPromptMissing') }}
+                </p>
+              </aside>
             </div>
 
             <GeneratedImagesPanel />
@@ -91,7 +104,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import ActionBar from '@/components/ActionBar.vue'
@@ -134,6 +147,14 @@ const [avatarOption, setAvatarOption] = useAvatarOption()
 const { t } = useI18n()
 
 const colorAvatarRef = ref<VueColorAvatarRef>()
+
+// AI 模式展示生图时，主图右侧同步显示这张图对应的生图 prompt
+const showPromptCard = computed(
+  () => store.editorMode === 'ai' && !!store.generatedImage
+)
+const currentGeneratedImagePrompt = computed(
+  () => store.generatedImagePrompts[store.generatedImage] ?? ''
+)
 
 function handleGenerate() {
   if (Math.random() <= TRIGGER_PROBABILITY) {
@@ -342,9 +363,56 @@ async function generateMultiple(count = 5 * 6) {
     display: flex;
     align-items: center;
     justify-content: center;
+    column-gap: 1rem;
 
     @media screen and (max-width: var.$screen-sm) {
       transform: scale(0.85);
+    }
+
+    // AI 生图 prompt 信息卡：与主图等高、可滚动，窄屏隐藏（与右侧历史面板策略一致）
+    .ai-prompt-card {
+      display: flex;
+      flex-direction: column;
+      width: 12rem;
+      max-height: 280px;
+      padding: 0.7rem 0.8rem;
+      overflow: hidden;
+      user-select: text;
+      background: color.adjust(var.$color-dark, $lightness: 5%);
+      border-radius: 0.6rem;
+      box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.35);
+
+      .prompt-card-title {
+        flex-shrink: 0;
+        margin-bottom: 0.4rem;
+        color: color.adjust(var.$color-text, $lightness: -12%);
+        font-size: 0.78rem;
+        font-weight: bold;
+      }
+
+      .prompt-card-text {
+        flex: 1;
+        min-height: 0;
+        margin: 0;
+        overflow-y: auto;
+        font-size: 0.78rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+
+        &::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: color.adjust(var.$color-dark, $lightness: 20%);
+          border-radius: 2px;
+        }
+      }
+
+      @media screen and (max-width: var.$screen-md) {
+        display: none;
+      }
     }
   }
 

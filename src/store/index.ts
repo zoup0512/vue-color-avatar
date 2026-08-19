@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 
 import { WrapperShape } from '@/enums'
+import type { GeneratedImageRecord } from '@/services/ai-image'
 import type { AvatarOption } from '@/types'
 import { getRandomAvatarOption } from '@/utils'
 import { SCREEN } from '@/utils/constant'
@@ -31,6 +32,8 @@ export interface State {
   editorMode: EditorMode
   generatedImage: string
   generatedImages: string[]
+  /** 每张生图对应的 prompt（key 为图片地址或 data URL） */
+  generatedImagePrompts: Record<string, string>
   /** AI 模式撤销后可还原的图片在 generatedImages 中的下标 */
   generatedImageRedoStack: number[]
   /** AI 模板批量生成弹窗的开闭状态（顶部操作栏与侧栏共用） */
@@ -49,6 +52,7 @@ export const useStore = defineStore('store', {
       editorMode: 'ai',
       generatedImage: '',
       generatedImages: [],
+      generatedImagePrompts: {},
       generatedImageRedoStack: [],
       aiBatchModalVisible: false,
     } as State),
@@ -67,16 +71,29 @@ export const useStore = defineStore('store', {
       this.editorMode = mode
     },
 
-    [SET_GENERATED_IMAGE](image: string) {
+    [SET_GENERATED_IMAGE](image: string, prompt?: string) {
       this.editorMode = 'ai'
       this.generatedImage = image
       this.generatedImages.push(image)
+      if (typeof prompt === 'string' && prompt.trim()) {
+        this.generatedImagePrompts = {
+          ...this.generatedImagePrompts,
+          [image]: prompt.trim(),
+        }
+      }
       this.generatedImageRedoStack = []
     },
 
-    [SET_GENERATED_IMAGES](images: string[]) {
+    [SET_GENERATED_IMAGES](images: GeneratedImageRecord[]) {
       // 批量载入服务器端保存的历史（旧 → 新），不切换编辑模式
-      this.generatedImages = images
+      this.generatedImages = images.map((record) => record.url)
+      this.generatedImagePrompts = images.reduce<Record<string, string>>(
+        (prompts, record) => {
+          if (record.prompt) prompts[record.url] = record.prompt
+          return prompts
+        },
+        {}
+      )
     },
 
     [SET_CURRENT_GENERATED_IMAGE](image: string) {
@@ -92,6 +109,7 @@ export const useStore = defineStore('store', {
 
     [CLEAR_GENERATED_IMAGES]() {
       this.generatedImages = []
+      this.generatedImagePrompts = {}
       this.generatedImageRedoStack = []
     },
 

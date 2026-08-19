@@ -318,7 +318,7 @@ onMounted(async () => {
   if (history.length > 0) {
     store[SET_GENERATED_IMAGES]([...history].reverse())
     // 默认展示最新一张历史生图，避免 AI 模式回退显示普通头像
-    store[SET_CURRENT_GENERATED_IMAGE](history[0])
+    store[SET_CURRENT_GENERATED_IMAGE](history[0].url)
   }
 })
 
@@ -473,7 +473,7 @@ async function handleGenerate() {
 
   try {
     const image = await generateAIImage(referenceImage.value, prompt.value)
-    store[SET_GENERATED_IMAGE](image)
+    store[SET_GENERATED_IMAGE](image, prompt.value)
   } catch (error) {
     errorCode.value =
       error instanceof AIImageError ? error.code : 'generate_failed'
@@ -482,8 +482,8 @@ async function handleGenerate() {
   }
 }
 
-function handleBatchGenerated(image: string) {
-  store[SET_GENERATED_IMAGE](image)
+function handleBatchGenerated(image: string, prompt: string) {
+  store[SET_GENERATED_IMAGE](image, prompt)
 }
 
 function handleBatchProgress(progress: { current: number; total: number }) {

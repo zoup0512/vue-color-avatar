@@ -106,19 +106,47 @@ describe('generated image history', () => {
     expect(store.editorMode).toBe('ai')
   })
 
+  test('records the prompt of each generated image', () => {
+    const store = useStore()
+
+    store[SET_GENERATED_IMAGE]('data:image/png;base64,aW1hZ2U=', '可爱女孩')
+    store[SET_GENERATED_IMAGE]('data:image/png;base64,aW1hZ2U2=')
+    store[SET_GENERATED_IMAGE](
+      'data:image/png;base64,aW1hZ2Uz=',
+      '  酷飒男孩  '
+    )
+
+    expect(store.generatedImagePrompts).toEqual({
+      'data:image/png;base64,aW1hZ2U=': '可爱女孩',
+      'data:image/png;base64,aW1hZ2Uz=': '酷飒男孩',
+    })
+
+    store[CLEAR_GENERATED_IMAGES]()
+    expect(store.generatedImagePrompts).toEqual({})
+  })
+
   test('bulk loading the server history does not change the mode', () => {
     const store = useStore()
 
     store[SET_EDITOR_MODE]('svg')
     store[SET_GENERATED_IMAGES]([
-      '/avatar/api/history/files/20260813/20260813_153045_ab12.png',
-      '/avatar/api/history/files/20260814/20260814_093021_cd34.png',
+      {
+        url: '/avatar/api/history/files/20260813/20260813_153045_ab12.png',
+        prompt: '可爱女孩',
+      },
+      {
+        url: '/avatar/api/history/files/20260814/20260814_093021_cd34.png',
+        prompt: '',
+      },
     ])
 
     expect(store.generatedImages).toEqual([
       '/avatar/api/history/files/20260813/20260813_153045_ab12.png',
       '/avatar/api/history/files/20260814/20260814_093021_cd34.png',
     ])
+    expect(store.generatedImagePrompts).toEqual({
+      '/avatar/api/history/files/20260813/20260813_153045_ab12.png': '可爱女孩',
+    })
     expect(store.editorMode).toBe('svg')
     expect(store.generatedImage).toBe('')
   })

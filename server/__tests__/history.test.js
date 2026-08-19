@@ -59,6 +59,34 @@ describe('saveGeneratedImage', () => {
     expect(saved.toString()).toBe('hello')
   })
 
+  test('writes the prompt into a sidecar json next to the image', async () => {
+    const url = await saveGeneratedImage(PNG_DATA_URL, ' 生成酷飒头像 ')
+    const [day, name] = url.split('/').slice(-2)
+
+    const sidecarPath = path.join(
+      tempDir,
+      day,
+      `${name.slice(0, name.lastIndexOf('.'))}.json`
+    )
+    expect(JSON.parse(await fs.promises.readFile(sidecarPath, 'utf8'))).toEqual({
+      prompt: '生成酷飒头像',
+    })
+
+    const history = await listHistory()
+    expect(history[0]).toEqual({ url, prompt: '生成酷飒头像' })
+  })
+
+  test('skips the sidecar when the prompt is empty', async () => {
+    const url = await saveGeneratedImage(PNG_DATA_URL, '   ')
+    const [day, name] = url.split('/').slice(-2)
+
+    const files = await fs.promises.readdir(path.join(tempDir, day))
+    expect(files).toEqual([name])
+
+    const history = await listHistory()
+    expect(history[0]).toEqual({ url, prompt: '' })
+  })
+
   test('returns null for unparsable input without writing files', async () => {
     expect(await saveGeneratedImage('invalid')).toBeNull()
     expect(await fs.promises.readdir(tempDir)).toEqual([])
@@ -83,10 +111,53 @@ describe('listHistory', () => {
     )
 
     expect(await listHistory()).toEqual([
-      '/avatar/api/history/files/20260814/20260814_090001_cccc.png',
-      '/avatar/api/history/files/20260814/20260814_090000_bbbb.jpg',
-      '/avatar/api/history/files/20260813/20260813_100000_aaaa.png',
+      {
+        url: '/avatar/api/history/files/20260814/20260814_090001_cccc.png',
+        prompt: '',
+      },
+      {
+        url: '/avatar/api/history/files/20260814/20260814_090000_bbbb.jpg',
+        prompt: '',
+      },
+      {
+        url: '/avatar/api/history/files/20260813/20260813_100000_aaaa.png',
+        prompt: '',
+      },
     ])
+  })
+
+  test('returns the prompt stored in the sidecar file', async () => {
+    await fs.promises.mkdir(path.join(tempDir, '20260814'), { recursive: true })
+    await fs.promises.writeFile(
+      path.join(tempDir, '20260814', '20260814_090000_bbbb.jpg'),
+      'x'
+    )
+    await fs.promises.writeFile(
+      path.join(tempDir, '20260814', '20260814_090000_bbbb.json'),
+      JSON.stringify({ prompt: '生成完整的可爱 Q 版女孩头像' })
+    )
+
+    expect(await listHistory()).toEqual([
+      {
+        url: '/avatar/api/history/files/20260814/20260814_090000_bbbb.jpg',
+        prompt: '生成完整的可爱 Q 版女孩头像',
+      },
+    ])
+  })
+
+  test('treats a corrupted sidecar as an empty prompt', async () => {
+    await fs.promises.mkdir(path.join(tempDir, '20260814'), { recursive: true })
+    await fs.promises.writeFile(
+      path.join(tempDir, '20260814', '20260814_090000_bbbb.jpg'),
+      'x'
+    )
+    await fs.promises.writeFile(
+      path.join(tempDir, '20260814', '20260814_090000_bbbb.json'),
+      '{not json'
+    )
+
+    const history = await listHistory()
+    expect(history[0].prompt).toBe('')
   })
 
   test('ignores unrelated files and invalid names', async () => {

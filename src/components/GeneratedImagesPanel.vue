@@ -19,6 +19,9 @@
           class="image-btn"
           :class="{ active: image === store.generatedImage }"
           :aria-pressed="image === store.generatedImage"
+          :title="
+            store.generatedImagePrompts[image] || t('label.aiGeneratedImage')
+          "
           :aria-label="`
             ${t('label.aiGeneratedImage')} ${reversedImages.length - index}
           `"

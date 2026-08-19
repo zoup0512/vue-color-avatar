@@ -4,6 +4,7 @@
 //
 // 目录结构（示例）:
 //   /var/data/avatar-history/20260814/20260814_153045_ab12.png
+//   /var/data/avatar-history/20260814/20260814_153045_ab12.json   ← 生图 prompt 旁挂文件
 //   /var/data/avatar-history/20260814/20260814_153126_cd34.jpg
 //
 // 目录根可用环境变量 HISTORY_DIR 覆盖：
@@ -47,8 +48,8 @@ function parseDataUrl(dataUrl) {
   return { mime, ext, data: Buffer.from(match[2], 'base64') }
 }
 
-/** 保存一张生成图，返回可访问的相对 URL；解析失败返回 null */
-async function saveGeneratedImage(dataUrl) {
+/** 保存一张生成图及其生图 prompt，返回可访问的相对 URL；解析失败返回 null */
+async function saveGeneratedImage(dataUrl, prompt) {
   const parsed = parseDataUrl(dataUrl)
   if (!parsed) return null
 
@@ -60,10 +61,39 @@ async function saveGeneratedImage(dataUrl) {
 
   const name = `${day}_${time}_${crypto.randomBytes(2).toString('hex')}.${parsed.ext}`
   await fs.promises.writeFile(path.join(dir, name), parsed.data)
+
+  // prompt 旁挂为同名 .json（FILE_NAME_PATTERN 只匹配图片，sidecar 不会混入历史图列表）
+  const normalizedPrompt = typeof prompt === 'string' ? prompt.trim() : ''
+  if (normalizedPrompt) {
+    const baseName = name.slice(0, name.lastIndexOf('.'))
+    await fs.promises.writeFile(
+      path.join(dir, `${baseName}.json`),
+      JSON.stringify({ prompt: normalizedPrompt })
+    )
+  }
   return `/avatar/api/history/files/${day}/${name}`
 }
 
-/** 列出全部历史图片（最新在前），返回相对 URL 数组 */
+/** 读取一张历史图旁挂的 prompt sidecar；缺失或损坏返回空字符串 */
+async function readPromptSidecar(filePath) {
+  const metaPath = `${filePath.slice(0, filePath.lastIndexOf('.'))}.json`
+  let content
+  try {
+    content = await fs.promises.readFile(metaPath, 'utf8')
+  } catch (error) {
+    if (error.code === 'ENOENT') return ''
+    throw error
+  }
+
+  try {
+    const parsed = JSON.parse(content)
+    return typeof parsed.prompt === 'string' ? parsed.prompt : ''
+  } catch {
+    return ''
+  }
+}
+
+/** 列出全部历史图片（最新在前），返回 { url, prompt } 数组；旧图无 sidecar 时 prompt 为空 */
 async function listHistory() {
   const root = getHistoryDir()
 
@@ -75,7 +105,7 @@ async function listHistory() {
     throw error
   }
 
-  const images = []
+  const filePaths = []
   for (const entry of dayDirs) {
     if (!entry.isDirectory() || !DAY_DIR_PATTERN.test(entry.name)) continue
 
@@ -89,13 +119,23 @@ async function listHistory() {
 
     for (const file of files) {
       if (FILE_NAME_PATTERN.test(file)) {
-        images.push(`/avatar/api/history/files/${entry.name}/${file}`)
+        filePaths.push(path.join(root, entry.name, file))
       }
     }
   }
 
   // 文件名含日期时间前缀，字典序倒序即最新在前
-  return images.sort().reverse()
+  filePaths.sort().reverse()
+
+  return Promise.all(
+    filePaths.map(async (filePath) => {
+      const [day, name] = filePath.slice(root.length + 1).split(path.sep)
+      return {
+        url: `/avatar/api/history/files/${day}/${name}`,
+        prompt: await readPromptSidecar(filePath),
+      }
+    })
+  )
 }
 
 /** 清空全部历史目录 */

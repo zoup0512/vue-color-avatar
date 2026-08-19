@@ -43,6 +43,7 @@ export const en = {
     referenceImage: 'Reference Image',
     aiGeneratedImage: 'AI Generated Avatar',
     aiGeneratedImages: 'Generation History',
+    aiImagePrompt: 'Image Prompt',
     aiPrompt: 'Generation Prompt',
     aiGender: 'Character Gender',
     aiPromptTemplate: 'Template Style',
@@ -97,6 +98,7 @@ export const en = {
     aiPromptPlaceholder:
       'Describe the hairstyle, clothes, accessories, and background',
     aiPromptCount: '{current} / {max}',
+    aiPromptMissing: 'No prompt recorded for this image',
     customTemplateNameRequired: 'Please enter a template name',
     customTemplateNameDuplicate:
       'A template with this name already exists. Use another name',
