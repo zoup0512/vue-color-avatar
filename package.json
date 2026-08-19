@@ -8,7 +8,9 @@
     "build": "npm run test && vite build",
     "build:prerelease": "vite build --mode prerelease",
     "deps": "pnpm up --interactive --latest",
-    "dev": "vite",
+    "dev": "node server/dev.cjs",
+    "dev:web": "vite",
+    "dev:api": "node server/index.cjs",
     "lint": "pnpm lint:es && pnpm lint:style && pnpm lint:ts",
     "lint:es": "eslint \"src/**/*.{js,jsx,ts,tsx,vue}\"",
     "lint:prettier": "prettier --write \"src/**/*.{md,json,html}\"",
@@ -20,6 +22,7 @@
   "dependencies": {
     "canvas-confetti": "^1.4.0",
     "clipboard": "^2.0.8",
+    "dotenv": "^16.4.7",
     "html2canvas": "^1.3.2",
     "jszip": "^3.10.0",
     "object-hash": "^3.0.0",

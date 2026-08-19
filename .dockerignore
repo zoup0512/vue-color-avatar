@@ -1,0 +1,10 @@
+node_modules
+dist
+.deploy
+.git
+.idea
+.env
+.env.*
+!.env.example
+coverage
+stats.html

@@ -4,6 +4,12 @@
   </div>
 </template>
 
+<script lang="ts">
+export interface PerfectScrollbarRef {
+  update: (resetScroll?: boolean) => void
+}
+</script>
+
 <script lang="ts" setup>
 import PerfectScrollbar from 'perfect-scrollbar'
 import { onMounted, onUnmounted, ref } from 'vue'
@@ -12,7 +18,16 @@ const props = defineProps<{ options?: PerfectScrollbar.Options }>()
 
 const scrollWrapper = ref<HTMLDivElement>()
 
-let ps: PerfectScrollbar
+let ps: PerfectScrollbar | undefined
+
+function update(resetScroll = false) {
+  if (resetScroll && scrollWrapper.value) {
+    scrollWrapper.value.scrollTop = 0
+  }
+  ps?.update()
+}
+
+defineExpose<PerfectScrollbarRef>({ update })
 
 onMounted(() => {
   if (!scrollWrapper.value) {
@@ -28,7 +43,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  ps.destroy()
+  ps?.destroy()
 })
 </script>
 

@@ -7,19 +7,28 @@
       height: `${avatarSize}px`,
       ...getWrapperShapeStyle(),
     }"
-    :class="getWrapperShapeClassName()"
+    :class="[getWrapperShapeClassName(), { generated: generatedImage }]"
   >
-    <Background
-      :color="avatarOption.background.color"
-      :image="avatarOption.background.image"
+    <img
+      v-if="generatedImage"
+      :src="generatedImage"
+      class="generated-image"
+      :alt="generatedImageAlt"
     />
 
-    <div class="avatar-payload" v-html="svgContent" />
+    <template v-else>
+      <Background
+        :color="avatarOption.background.color"
+        :image="avatarOption.background.image"
+      />
 
-    <Border
-      :color="avatarOption.background.borderColor"
-      :radius="getWrapperShapeStyle().borderRadius"
-    />
+      <div class="avatar-payload" v-html="svgContent" />
+
+      <Border
+        :color="avatarOption.background.borderColor"
+        :radius="getWrapperShapeStyle().borderRadius"
+      />
+    </template>
   </div>
 </template>
 
@@ -44,14 +53,23 @@ import Border from './widgets/Border.vue'
 interface VueColorAvatarProps {
   option: AvatarOption
   size?: number
+  generatedImage?: string
+  generatedImageAlt?: string
 }
 
 const props = withDefaults(defineProps<VueColorAvatarProps>(), {
   option: () => getRandomAvatarOption(),
   size: 280,
+  generatedImage: '',
+  generatedImageAlt: 'AI generated avatar',
 })
 
-const { option: avatarOption, size: avatarSize } = toRefs(props)
+const {
+  option: avatarOption,
+  size: avatarSize,
+  generatedImage,
+  generatedImageAlt,
+} = toRefs(props)
 
 const avatarRef = ref<VueColorAvatarRef['avatarRef']>()
 
@@ -69,6 +87,10 @@ function getWrapperShapeClassName() {
 }
 
 function getWrapperShapeStyle() {
+  if (generatedImage.value) {
+    return SHAPE_STYLE_SET[WrapperShape.Square]
+  }
+
   return SHAPE_STYLE_SET[avatarOption.value.wrapperShape ?? WrapperShape.Circle]
 }
 
@@ -152,6 +174,17 @@ watchEffect(async () => {
     z-index: 2;
     width: 100%;
     height: 100%;
+  }
+
+  &.generated {
+    background: #fff;
+  }
+
+  .generated-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 }
 </style>

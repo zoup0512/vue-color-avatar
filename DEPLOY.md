@@ -65,6 +65,77 @@ A 记录，若域名在其他平台解析则去对应平台加）。
 
 发布后访问 `https://www.razor123.site/avatar/`。
 
+### 运行 AI 生图 API
+
+AI 生图必须由服务器代为调用，不能把 API Key 写入 `VITE_*` 或前端代码，否则任何访问者都能在浏览器中看到它。
+
+首次部署时，把 `server/` 上传到服务器并安装服务端依赖：
+
+```bash
+mkdir -p /opt/vue-color-avatar-api
+scp -r server/* root@124.220.35.87:/opt/vue-color-avatar-api/
+ssh root@124.220.35.87 "cd /opt/vue-color-avatar-api && npm install --omit=dev"
+```
+
+创建仅 root 可读的环境变量文件：
+
+```bash
+cat >/etc/vue-color-avatar-api.env <<'EOF'
+GRSAI_API_KEY=sk-请替换为你自己的Key
+PORT=8787
+EOF
+chmod 600 /etc/vue-color-avatar-api.env
+```
+
+创建 `/etc/systemd/system/vue-color-avatar-api.service`：
+
+```ini
+[Unit]
+Description=Vue Color Avatar AI API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/vue-color-avatar-api
+EnvironmentFile=/etc/vue-color-avatar-api.env
+ExecStart=/usr/bin/node /opt/vue-color-avatar-api/index.cjs
+Restart=on-failure
+User=nobody
+Group=nogroup
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动并检查服务：
+
+```bash
+systemctl daemon-reload
+systemctl enable --now vue-color-avatar-api
+systemctl status vue-color-avatar-api
+```
+
+将 `deploy/nginx.conf` 中的 AI 接口 location 一并加入现有 HTTPS `server {}`，然后执行：
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+不带有效参数的测试请求应返回参数错误，而不是 Nginx 404：
+
+```bash
+curl -i -X POST https://www.razor123.site/avatar/api/generate \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+以后服务端代码有更新时，重新上传 `server/` 并执行：
+
+```bash
+systemctl restart vue-color-avatar-api
+```
+
 ## 三、常见问题
 
 | 现象 | 原因 / 解决 |

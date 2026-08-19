@@ -11,11 +11,30 @@
                 ref="colorAvatarRef"
                 :option="avatarOption"
                 :size="280"
+                :generated-image="
+                  store.editorMode === 'ai' ? store.generatedImage : ''
+                "
+                :generated-image-alt="t('label.aiGeneratedImage')"
                 :style="{
                   transform: `rotateY(${flipped ? -180 : 0}deg)`,
                 }"
               />
+
+              <aside
+                v-if="showPromptCard"
+                class="ai-prompt-card"
+                :aria-label="t('label.aiImagePrompt')"
+              >
+                <div class="prompt-card-title">
+                  {{ t('label.aiImagePrompt') }}
+                </div>
+                <p class="prompt-card-text">
+                  {{ currentGeneratedImagePrompt || t('text.aiPromptMissing') }}
+                </p>
+              </aside>
             </div>
+
+            <GeneratedImagesPanel />
 
             <ActionBar @action="handleAction" />
 
@@ -44,7 +63,7 @@
               <button
                 type="button"
                 class="action-btn action-multiple"
-                @click="() => generateMultiple()"
+                @click="handleGenerateMultiple"
               >
                 {{ t('action.downloadMultiple') }}
               </button>
@@ -85,11 +104,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import ActionBar from '@/components/ActionBar.vue'
 import Configurator from '@/components/Configurator.vue'
+import GeneratedImagesPanel from '@/components/GeneratedImagesPanel.vue'
 import BatchDownloadModal from '@/components/Modal/BatchDownloadModal.vue'
 import CodeModal from '@/components/Modal/CodeModal.vue'
 import DownloadModal from '@/components/Modal/DownloadModal.vue'
@@ -103,7 +123,7 @@ import Footer from '@/layouts/Footer.vue'
 import Header from '@/layouts/Header.vue'
 import Sider from '@/layouts/Sider.vue'
 import { useStore } from '@/store'
-import { REDO, UNDO } from '@/store/mutation-type'
+import { REDO, SET_AI_BATCH_MODAL_VISIBLE, UNDO } from '@/store/mutation-type'
 import {
   getRandomAvatarOption,
   getSpecialAvatarOption,
@@ -127,6 +147,14 @@ const [avatarOption, setAvatarOption] = useAvatarOption()
 const { t } = useI18n()
 
 const colorAvatarRef = ref<VueColorAvatarRef>()
+
+// AI 模式展示生图时，主图右侧同步显示这张图对应的生图 prompt
+const showPromptCard = computed(
+  () => store.editorMode === 'ai' && !!store.generatedImage
+)
+const currentGeneratedImagePrompt = computed(
+  () => store.generatedImagePrompts[store.generatedImage] ?? ''
+)
 
 function handleGenerate() {
   if (Math.random() <= TRIGGER_PROBABILITY) {
@@ -154,6 +182,18 @@ const downloadModalVisible = ref(false)
 const downloading = ref(false)
 const imageDataURL = ref('')
 
+/** 生成下载文件名：AI 生图携带时间戳，避免多次下载相互覆盖 */
+function getDownloadFileName() {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const timestamp =
+    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+    `_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+  return store.editorMode === 'ai'
+    ? `${appName}_${timestamp}.png`
+    : `${appName}.png`
+}
+
 async function handleDownload() {
   try {
     downloading.value = true
@@ -165,11 +205,15 @@ async function handleDownload() {
     )
 
     if (avatarEle) {
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(avatarEle, {
-        backgroundColor: null,
-      })
-      const dataURL = canvas.toDataURL()
+      let dataURL = store.editorMode === 'ai' ? store.generatedImage : ''
+
+      if (!dataURL) {
+        const html2canvas = (await import('html2canvas')).default
+        const canvas = await html2canvas(avatarEle, {
+          backgroundColor: null,
+        })
+        dataURL = canvas.toDataURL()
+      }
 
       if (notCompatible) {
         imageDataURL.value = dataURL
@@ -177,7 +221,7 @@ async function handleDownload() {
       } else {
         const trigger = document.createElement('a')
         trigger.href = dataURL
-        trigger.download = `${appName}.png`
+        trigger.download = getDownloadFileName()
         trigger.click()
       }
     }
@@ -239,6 +283,16 @@ watchEffect(() => {
     Array.isArray(avatarList.value) && avatarList.value.length > 0
 })
 
+/** 顶部“批量生成”按当前模式分流：AI 模式打开模板批量生成弹窗，普通模式走 SVG 批量 */
+function handleGenerateMultiple() {
+  if (store.editorMode === 'ai') {
+    store[SET_AI_BATCH_MODAL_VISIBLE](true)
+    return
+  }
+
+  generateMultiple()
+}
+
 async function generateMultiple(count = 5 * 6) {
   const { default: hash } = await import('object-hash')
 
@@ -297,6 +351,7 @@ async function generateMultiple(count = 5 * 6) {
 }
 
 .playground {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -308,9 +363,56 @@ async function generateMultiple(count = 5 * 6) {
     display: flex;
     align-items: center;
     justify-content: center;
+    column-gap: 1rem;
 
     @media screen and (max-width: var.$screen-sm) {
       transform: scale(0.85);
+    }
+
+    // AI 生图 prompt 信息卡：与主图等高、可滚动，窄屏隐藏（与右侧历史面板策略一致）
+    .ai-prompt-card {
+      display: flex;
+      flex-direction: column;
+      width: 12rem;
+      max-height: 280px;
+      padding: 0.7rem 0.8rem;
+      overflow: hidden;
+      user-select: text;
+      background: color.adjust(var.$color-dark, $lightness: 5%);
+      border-radius: 0.6rem;
+      box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.35);
+
+      .prompt-card-title {
+        flex-shrink: 0;
+        margin-bottom: 0.4rem;
+        color: color.adjust(var.$color-text, $lightness: -12%);
+        font-size: 0.78rem;
+        font-weight: bold;
+      }
+
+      .prompt-card-text {
+        flex: 1;
+        min-height: 0;
+        margin: 0;
+        overflow-y: auto;
+        font-size: 0.78rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+
+        &::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: color.adjust(var.$color-dark, $lightness: 20%);
+          border-radius: 2px;
+        }
+      }
+
+      @media screen and (max-width: var.$screen-md) {
+        display: none;
+      }
     }
   }
 

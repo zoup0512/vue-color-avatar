@@ -32,8 +32,16 @@ const { t } = useI18n()
 
 const store = useStore()
 
-const canUndo = computed(() => store.history.past.length > 0)
-const canRedo = computed(() => store.history.future.length > 0)
+const canUndo = computed(() =>
+  store.editorMode === 'ai'
+    ? store.generatedImages.indexOf(store.generatedImage) > 0
+    : store.history.past.length > 0
+)
+const canRedo = computed(() =>
+  store.editorMode === 'ai'
+    ? store.generatedImageRedoStack.length > 0
+    : store.history.future.length > 0
+)
 
 const actions = computed(() => [
   {
