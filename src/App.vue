@@ -50,7 +50,7 @@
               <button
                 type="button"
                 class="action-btn action-multiple"
-                @click="() => generateMultiple()"
+                @click="handleGenerateMultiple"
               >
                 {{ t('action.downloadMultiple') }}
               </button>
@@ -110,7 +110,7 @@ import Footer from '@/layouts/Footer.vue'
 import Header from '@/layouts/Header.vue'
 import Sider from '@/layouts/Sider.vue'
 import { useStore } from '@/store'
-import { CLEAR_GENERATED_IMAGE, REDO, UNDO } from '@/store/mutation-type'
+import { REDO, SET_AI_BATCH_MODAL_VISIBLE, UNDO } from '@/store/mutation-type'
 import {
   getRandomAvatarOption,
   getSpecialAvatarOption,
@@ -262,9 +262,17 @@ watchEffect(() => {
     Array.isArray(avatarList.value) && avatarList.value.length > 0
 })
 
-async function generateMultiple(count = 5 * 6) {
-  store[CLEAR_GENERATED_IMAGE]()
+/** 顶部“批量生成”按当前模式分流：AI 模式打开模板批量生成弹窗，普通模式走 SVG 批量 */
+function handleGenerateMultiple() {
+  if (store.editorMode === 'ai') {
+    store[SET_AI_BATCH_MODAL_VISIBLE](true)
+    return
+  }
 
+  generateMultiple()
+}
+
+async function generateMultiple(count = 5 * 6) {
   const { default: hash } = await import('object-hash')
 
   const avatarMap = [...Array(count)].reduce<Map<string, AvatarOption>>(

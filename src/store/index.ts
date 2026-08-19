@@ -9,6 +9,7 @@ import {
   CLEAR_GENERATED_IMAGE,
   CLEAR_GENERATED_IMAGES,
   REDO,
+  SET_AI_BATCH_MODAL_VISIBLE,
   SET_AVATAR_OPTION,
   SET_CURRENT_GENERATED_IMAGE,
   SET_EDITOR_MODE,
@@ -32,6 +33,8 @@ export interface State {
   generatedImages: string[]
   /** AI 模式撤销后可还原的图片在 generatedImages 中的下标 */
   generatedImageRedoStack: number[]
+  /** AI 模板批量生成弹窗的开闭状态（顶部操作栏与侧栏共用） */
+  aiBatchModalVisible: boolean
 }
 
 export const useStore = defineStore('store', {
@@ -47,6 +50,7 @@ export const useStore = defineStore('store', {
       generatedImage: '',
       generatedImages: [],
       generatedImageRedoStack: [],
+      aiBatchModalVisible: false,
     } as State),
   actions: {
     [SET_AVATAR_OPTION](data: AvatarOption) {
@@ -148,6 +152,10 @@ export const useStore = defineStore('store', {
       if (collapsed !== this.isSiderCollapsed) {
         this.isSiderCollapsed = collapsed
       }
+    },
+
+    [SET_AI_BATCH_MODAL_VISIBLE](visible: boolean) {
+      this.aiBatchModalVisible = visible
     },
   },
 })

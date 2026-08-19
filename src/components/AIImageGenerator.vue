@@ -77,6 +77,7 @@
               custom: template.custom,
             }"
             :aria-pressed="selectedTemplateId === template.id"
+            :title="template.name"
             :disabled="generating"
             @click="selectedTemplateId = template.id"
           >
@@ -185,7 +186,7 @@
           type="button"
           class="ai-btn batch-btn"
           :disabled="singleGenerating || !referenceImage"
-          @click="batchModalVisible = true"
+          @click="store[SET_AI_BATCH_MODAL_VISIBLE](true)"
         >
           {{
             batchRunning
@@ -196,7 +197,7 @@
       </div>
 
       <AIBatchGenerateModal
-        :visible="batchModalVisible"
+        :visible="store.aiBatchModalVisible"
         :templates="templateOptions"
         :prompts="promptDrafts[selectedGender]"
         :reference-image="referenceImage"
@@ -204,7 +205,7 @@
         @generated="handleBatchGenerated"
         @progress="handleBatchProgress"
         @update:running="batchRunning = $event"
-        @close="batchModalVisible = false"
+        @close="store[SET_AI_BATCH_MODAL_VISIBLE](false)"
       />
     </div>
   </SectionWrapper>
@@ -242,6 +243,7 @@ import {
 } from '@/services/ai-image'
 import { useStore } from '@/store'
 import {
+  SET_AI_BATCH_MODAL_VISIBLE,
   SET_CURRENT_GENERATED_IMAGE,
   SET_GENERATED_IMAGE,
   SET_GENERATED_IMAGES,
@@ -266,8 +268,7 @@ const namingMode = ref<'create' | 'saveAs' | null>(null)
 const templateNameInput = ref('')
 const templateNameError = ref('')
 
-// 批量生成
-const batchModalVisible = ref(false)
+// 批量生成（弹窗开闭放在 store，顶部操作栏的“批量生成”按钮也会打开同一个弹窗）
 const batchRunning = ref(false)
 const batchProgressText = ref('')
 
@@ -529,9 +530,11 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     display: flex;
     column-gap: 0.4rem;
 
+    // 模板数量多，改为网格每行约 3 个自动换行，避免全部挤成一排
     &.wrap {
-      flex-wrap: wrap;
-      row-gap: 0.4rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+      gap: 0.4rem;
     }
   }
 
