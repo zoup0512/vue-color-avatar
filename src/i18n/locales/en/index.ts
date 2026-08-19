@@ -21,6 +21,15 @@ export const en = {
     generatingAIImage: 'Generating...',
     returnToSVG: 'Return to SVG Editor',
     clearGeneratedImages: 'Clear History',
+    batchGenerate: 'Generate in Batch',
+    startBatchGenerate: 'Start',
+    stopBatchGenerate: 'Stop',
+    createCustomTemplate: 'New Template',
+    saveAsCustomTemplate: 'Save as Custom Template',
+    deleteCustomTemplate: 'Delete template',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    selectAll: 'Select all',
   },
   label: {
     wrapperShape: 'Avatar Shape',
@@ -37,6 +46,9 @@ export const en = {
     aiPrompt: 'Generation Prompt',
     aiGender: 'Character Gender',
     aiPromptTemplate: 'Template Style',
+    customTemplateName: 'Template Name',
+    batchGenerateTitle: 'Batch Generate Avatars',
+    batchTemplateSelect: 'Select Templates',
   },
   gender: {
     female: 'Female',
@@ -46,6 +58,12 @@ export const en = {
     cute: 'Cute',
     cool: 'Cool',
     traditional: 'Traditional',
+    fairy: 'Fairy',
+    cyberpunk: 'Cyberpunk',
+    retro: 'Retro',
+    sporty: 'Sporty',
+    idol: 'Idol',
+    campus: 'Campus',
   },
   tab: {
     svgGenerator: 'Avatar Editor',
@@ -79,6 +97,22 @@ export const en = {
     aiPromptPlaceholder:
       'Describe the hairstyle, clothes, accessories, and background',
     aiPromptCount: '{current} / {max}',
+    customTemplateNameRequired: 'Please enter a template name',
+    customTemplateNameDuplicate:
+      'A template with this name already exists. Use another name',
+    customTemplateLimitReached: 'At most {max} custom templates are allowed',
+    confirmDeleteTemplate: 'Delete template "{name}"?',
+    batchGenerateTip:
+      'Uses the current reference image and gender ({gender}), generating once per selected template',
+    batchEmptyPrompt: 'This template has no prompt yet. Fill it in first',
+    batchSelectRequired: 'Please select at least one template',
+    batchProgress:
+      'Progress {current} / {total} (success {success}, failed {failure})',
+    batchStatusPending: 'Pending',
+    batchStatusRunning: 'Generating',
+    batchStatusDone: 'Done',
+    batchStatusFailed: 'Failed',
+    batchStopped: 'Stopped. Remaining templates were skipped',
     aiError: {
       invalid_file: 'Please select a valid image file',
       file_too_large: 'The image must be no larger than 10 MB',
