@@ -30,6 +30,9 @@ export const en = {
     confirm: 'Confirm',
     cancel: 'Cancel',
     selectAll: 'Select all',
+    customize: 'Customize',
+    openConfigurator: 'Open customizer',
+    closeConfigurator: 'Close customizer',
   },
   label: {
     wrapperShape: 'Avatar Shape',

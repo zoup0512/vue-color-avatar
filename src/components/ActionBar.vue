@@ -1,16 +1,18 @@
 <template>
-  <div class="action-menu">
-    <div
+  <nav class="action-menu" aria-label="avatar actions">
+    <button
       v-for="ac in actions"
       :key="ac.type"
+      type="button"
       class="menu-item"
       :class="{ disabled: ac.disabled }"
       :title="ac.tip"
-      @click="emit('action', ac.type)"
+      :aria-label="ac.tip"
+      @click="!ac.disabled && emit('action', ac.type)"
     >
       <img :src="ac.icon" :alt="ac.tip" />
-    </div>
-  </div>
+    </button>
+  </nav>
 </template>
 
 <script lang="ts" setup>
@@ -76,26 +78,54 @@ const actions = computed(() => [
 .action-menu {
   display: flex;
   align-items: center;
-  margin-top: 5rem;
-  padding: 0.5rem;
-  background-color: var.$color-gray;
-  border-radius: 2rem;
+  margin-top: 1.4rem;
+  padding: 0.4rem;
+  column-gap: 0.3rem;
+  background: rgba(var.$color-dark, 0.6);
+  border: 1px solid var.$color-border-strong;
+  border-radius: 2.6rem;
+  backdrop-filter: blur(0.8rem);
+
+  @supports not (backdrop-filter: blur(0.8rem)) {
+    background: color.adjust(var.$color-dark, $lightness: 4%);
+  }
 
   .menu-item {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    margin: 0 0.5rem;
-    background-color: color.adjust(var.$color-gray, $lightness: 10%);
+    width: 2.75rem;
+    height: 2.75rem;
+    background: transparent;
     border-radius: 50%;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: background-color 0.2s, transform 0.15s;
+
+    img {
+      width: 1.15rem;
+      height: 1.15rem;
+      opacity: 0.85;
+      transition: opacity 0.2s;
+    }
+
+    &:hover:not(.disabled) {
+      background: color.adjust(var.$color-dark, $lightness: 10%);
+
+      img {
+        opacity: 1;
+      }
+    }
+
+    &:active:not(.disabled) {
+      transform: scale(0.92);
+    }
 
     &.disabled {
       cursor: default;
-      opacity: 0.6;
+
+      img {
+        opacity: 0.35;
+      }
     }
   }
 }

@@ -98,21 +98,24 @@ onUnmounted(() => {
 @use 'sass:color';
 
 .code-box {
-  $code-header-height: 4rem;
-  $code-box-side-padding-normal: 2rem;
+  $code-header-height: 3.8rem;
+  $code-box-side-padding-normal: 1.6rem;
   $code-box-side-padding-small: 1rem;
   position: absolute;
   top: 50%;
   left: 50%;
+  display: flex;
+  flex-direction: column;
   width: 75%;
   max-width: 800px;
   height: min(90vh, 1000px);
   margin: 0 auto;
-  padding: $code-header-height $code-box-side-padding-normal 2.5rem
-    $code-box-side-padding-normal;
+  padding: 0 0 1.6rem;
   overflow: hidden;
   background-color: color.adjust(var.$color-dark, $lightness: 3%);
-  border-radius: 1rem;
+  border: 1px solid var.$color-border-strong;
+  border-radius: 1.4rem;
+  box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.5);
   transform: translate(-50%, -50%);
   transition: width 0.2s;
 
@@ -121,13 +124,11 @@ onUnmounted(() => {
   }
 
   @media screen and (max-width: var.$screen-md) {
-    width: 80%;
+    width: 86%;
   }
 
   @media screen and (max-width: var.$screen-sm) {
-    width: 90%;
-    padding: $code-header-height $code-box-side-padding-small 2.5rem
-      $code-box-side-padding-small;
+    width: 92%;
 
     .code-header {
       padding: 0 $code-box-side-padding-small;
@@ -135,29 +136,30 @@ onUnmounted(() => {
   }
 
   .code-header {
-    position: absolute;
-    top: 0;
-    left: 0;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     width: 100%;
     height: $code-header-height;
     padding: 0 $code-box-side-padding-normal;
 
     .title {
-      font-weight: bold;
+      color: var.$color-text-strong;
+      font-weight: 600;
     }
 
     .close-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 2rem;
-      height: 2rem;
+      width: 2.1rem;
+      height: 2.1rem;
       margin-left: auto;
-      background-color: color.adjust(var.$color-dark, $lightness: 8%);
+      background-color: color.adjust(var.$color-dark, $lightness: 9%);
+      border: 1px solid transparent;
       border-radius: 50%;
       cursor: pointer;
+      transition: border-color 0.2s;
 
       .icon-close {
         width: 45%;
@@ -166,6 +168,8 @@ onUnmounted(() => {
       }
 
       &:hover {
+        border-color: var.$color-border-strong;
+
         .icon-close {
           opacity: 1;
         }
@@ -175,11 +179,18 @@ onUnmounted(() => {
 
   .code-content-box {
     position: relative;
-    height: 20rem;
-    height: 100%;
-    padding: 1rem 0;
+    flex: 1;
+    min-height: 0;
+    margin: 0 $code-box-side-padding-normal;
+    padding: 1rem 0 3.2rem;
+    overflow: hidden;
     background: color.adjust(var.$color-dark, $lightness: -1%);
-    border-radius: 0.8rem;
+    border: 1px solid var.$color-border;
+    border-radius: 0.9rem;
+
+    @media screen and (max-width: var.$screen-sm) {
+      margin: 0 $code-box-side-padding-small;
+    }
 
     .code-scroll-wrapper {
       height: 100%;
@@ -187,23 +198,33 @@ onUnmounted(() => {
 
     .copy-btn {
       position: absolute;
-      top: 100%;
+      bottom: 0.9rem;
       left: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 5rem;
-      height: 2rem;
+      width: 5.4rem;
+      height: 2.1rem;
       color: #fff;
-      background-color: var.$color-accent;
-      border-radius: 0.4rem;
-      transform: translate(-50%, -45%);
+      background: linear-gradient(
+        115deg,
+        var.$color-primary,
+        var.$color-secondary
+      );
+      border-radius: 2.1rem;
+      box-shadow: 0 0.4rem 1.2rem rgba(var.$color-accent, 0.35);
+      transform: translateX(-50%);
       cursor: pointer;
-      transition: color 0.15s, background-color 0.15s;
+      transition: filter 0.15s, box-shadow 0.2s;
+
+      &:hover {
+        box-shadow: 0 0.5rem 1.5rem rgba(var.$color-accent, 0.5);
+      }
 
       &.copied {
         color: var.$color-dark;
         background-color: var.$color-secondary;
+        box-shadow: none;
       }
     }
   }
@@ -217,20 +238,19 @@ onUnmounted(() => {
 .code-content {
   display: block;
   padding: 0 1.5rem;
-  color: #c0c5ce;
   color: #81cfef;
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-family: 'Ubuntu Mono', Fallback;
-  line-height: 1.4;
+  line-height: 1.5;
 
   @media screen and (max-width: var.$screen-sm) {
     padding: 0 1rem;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   & > .token {
     &.key {
-      color: #ffcb6b;
+      color: #c792ea;
     }
 
     &.string,

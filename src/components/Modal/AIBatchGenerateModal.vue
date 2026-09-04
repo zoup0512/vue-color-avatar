@@ -255,48 +255,56 @@ watch(
 @use 'sass:color';
 
 .container {
-  display: flex;
   position: absolute;
   top: 50%;
   left: 50%;
+  display: flex;
   flex-direction: column;
   width: min(92vw, 34rem);
   max-height: 86vh;
   overflow: hidden;
   background-color: color.adjust(var.$color-dark, $lightness: 3%);
-  border-radius: 1rem;
+  border: 1px solid var.$color-border-strong;
+  border-radius: 1.4rem;
+  box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.5);
   transform: translate(-50%, -50%);
 
   .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.4rem 0.4rem;
+    padding: 1.1rem 1.4rem 0.5rem;
 
     .title {
+      color: var.$color-text-strong;
       font-size: 1.1rem;
-      font-weight: bold;
+      font-weight: 600;
     }
 
     .close-btn {
-      padding: 0.1rem 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.9rem;
+      height: 1.9rem;
       color: var.$color-text;
-      font-size: 1.4rem;
-      line-height: 1.2;
+      font-size: 1.3rem;
+      line-height: 1;
       cursor: pointer;
       background: transparent;
-      border: 0;
-      border-radius: 0.4rem;
+      border: 1px solid transparent;
+      border-radius: 0.5rem;
 
       &:hover {
         background: color.adjust(var.$color-dark, $lightness: 12%);
+        border-color: var.$color-border-strong;
       }
     }
   }
 
   .tip {
     padding: 0 1.4rem 0.6rem;
-    color: color.adjust(var.$color-text, $lightness: -12%);
+    color: var.$color-text-muted;
     font-size: 0.8rem;
     line-height: 1.5;
   }
@@ -309,17 +317,18 @@ watch(
     .select-label {
       margin-right: 0.8rem;
       font-size: 0.9rem;
-      font-weight: bold;
+      font-weight: 600;
     }
 
     .link-btn {
-      padding: 0.15rem 0.5rem;
-      color: var.$color-primary;
+      padding: 0.15rem 0.55rem;
+      color: var.$color-secondary;
       font: inherit;
       font-size: 0.8rem;
       cursor: pointer;
       background: transparent;
-      border: 0;
+      border: 1px solid rgba(var.$color-secondary, 0.35);
+      border-radius: 2rem;
 
       &:disabled {
         cursor: not-allowed;
@@ -331,7 +340,7 @@ watch(
   .template-list {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.35rem;
     padding: 0.2rem 1.4rem;
     overflow-y: auto;
 
@@ -339,14 +348,15 @@ watch(
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      padding: 0.5rem 0.6rem;
+      padding: 0.55rem 0.65rem;
       cursor: pointer;
-      background: color.adjust(var.$color-dark, $lightness: 6%);
+      background: rgba(var.$color-dark, 0.5);
       border: 1px solid transparent;
-      border-radius: 0.5rem;
+      border-radius: 0.65rem;
+      transition: border-color 0.2s;
 
       &.selected {
-        border-color: var.$color-primary;
+        border-color: rgba(var.$color-accent, 0.65);
       }
 
       &.disabled {
@@ -368,12 +378,12 @@ watch(
 
       .status {
         flex-shrink: 0;
-        padding: 0.1rem 0.5rem;
+        padding: 0.12rem 0.55rem;
         font-size: 0.72rem;
         border-radius: 0.75rem;
 
         &.pending {
-          color: color.adjust(var.$color-text, $lightness: -15%);
+          color: var.$color-text-muted;
           background: color.adjust(var.$color-dark, $lightness: 12%);
         }
 
@@ -398,7 +408,7 @@ watch(
   .hint {
     min-height: 1.2rem;
     margin: 0.4rem 1.4rem 0;
-    color: color.adjust(var.$color-text, $lightness: -12%);
+    color: var.$color-text-muted;
     font-size: 0.8rem;
     line-height: 1.4;
   }
@@ -411,17 +421,18 @@ watch(
     padding: 0.8rem 1.4rem 1.2rem;
 
     .btn {
-      padding: 0.55rem 1.1rem;
+      padding: 0.6rem 1.2rem;
       color: var.$color-text;
       font: inherit;
       font-size: 0.9rem;
       cursor: pointer;
-      background: color.adjust(var.$color-dark, $lightness: 10%);
-      border: 0;
-      border-radius: 0.5rem;
+      background: rgba(var.$color-dark, 0.55);
+      border: 1px solid var.$color-border-strong;
+      border-radius: 2.2rem;
+      transition: border-color 0.2s;
 
       &:hover:not(:disabled) {
-        background: color.adjust(var.$color-dark, $lightness: 16%);
+        border-color: rgba(var.$color-accent, 0.5);
       }
 
       &:disabled {
@@ -431,12 +442,19 @@ watch(
 
       &.start-btn {
         color: #fff;
-        background: var.$color-primary;
+        background: linear-gradient(
+          115deg,
+          var.$color-primary,
+          var.$color-secondary
+        );
+        border-color: transparent;
+        box-shadow: 0 0.35rem 1rem rgba(var.$color-accent, 0.3);
       }
 
       &.stop-btn {
         color: #fff;
         background: #e5484d;
+        border-color: transparent;
       }
     }
   }

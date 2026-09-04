@@ -30,6 +30,9 @@ export const zh = {
     confirm: '确定',
     cancel: '取消',
     selectAll: '全选',
+    customize: '定制',
+    openConfigurator: '打开定制面板',
+    closeConfigurator: '收起定制面板',
   },
   label: {
     wrapperShape: '头像形状',

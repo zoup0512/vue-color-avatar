@@ -6,19 +6,21 @@
           <Header />
 
           <div class="playground">
-            <div class="avatar-wrapper">
-              <VueColorAvatar
-                ref="colorAvatarRef"
-                :option="avatarOption"
-                :size="280"
-                :generated-image="
-                  store.editorMode === 'ai' ? store.generatedImage : ''
-                "
-                :generated-image-alt="t('label.aiGeneratedImage')"
-                :style="{
-                  transform: `rotateY(${flipped ? -180 : 0}deg)`,
-                }"
-              />
+            <div class="avatar-stage">
+              <div class="avatar-wrapper">
+                <VueColorAvatar
+                  ref="colorAvatarRef"
+                  :option="avatarOption"
+                  :size="280"
+                  :generated-image="
+                    store.editorMode === 'ai' ? store.generatedImage : ''
+                  "
+                  :generated-image-alt="t('label.aiGeneratedImage')"
+                  :style="{
+                    transform: `rotateY(${flipped ? -180 : 0}deg)`,
+                  }"
+                />
+              </div>
             </div>
 
             <GeneratedImagesPanel />
@@ -311,6 +313,7 @@ async function generateMultiple(count = 5 * 6) {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
   color: var.$color-text;
   background-color: var.$color-page-bg;
 
@@ -324,6 +327,8 @@ async function generateMultiple(count = 5 * 6) {
       display: flex;
       flex-direction: column;
       height: 100%;
+      // 头像舞台光晕等装饰性伪元素会横向越界,裁掉避免出现横向滚动
+      overflow-x: hidden;
       overflow-y: auto;
     }
   }
@@ -336,15 +341,57 @@ async function generateMultiple(count = 5 * 6) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 0;
+  padding: 2.5rem 1rem;
+
+  // 头像舞台:玻璃卡片 + 径向光晕
+  .avatar-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.6rem 3rem;
+    overflow: hidden;
+    background: rgba(var.$color-dark, 0.55);
+    border: 1px solid var.$color-border-strong;
+    border-radius: 1.9rem;
+    box-shadow: 0 2rem 4.5rem rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(1rem);
+
+    @supports not (backdrop-filter: blur(1rem)) {
+      background: color.adjust(var.$color-dark, $lightness: 2%);
+    }
+
+    &::before {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: min(130%, 100vw);
+      aspect-ratio: 1;
+      background: radial-gradient(
+        closest-side,
+        rgba(var.$color-accent, 0.5),
+        rgba(var.$color-secondary, 0.25) 55%,
+        transparent 78%
+      );
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      content: '';
+      pointer-events: none;
+    }
+
+    @media screen and (max-width: var.$screen-sm) {
+      padding: 1.6rem 1.8rem;
+    }
+  }
 
   .avatar-wrapper {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
 
-    @media screen and (max-width: var.$screen-sm) {
-      transform: scale(0.85);
+    :deep(.vue-color-avatar) {
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
@@ -352,29 +399,32 @@ async function generateMultiple(count = 5 * 6) {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 4rem;
-    column-gap: 1rem;
-
-    @supports not (column-gap: 1rem) {
-      .action-btn {
-        margin: 0 0.5rem;
-      }
-    }
+    margin-top: 1.2rem;
+    column-gap: 0.8rem;
 
     .action-btn {
-      min-width: 6rem;
-      height: 2.5rem;
-      padding: 0 1rem;
+      min-width: 6.5rem;
+      height: 2.75rem;
+      padding: 0 1.3rem;
       color: var.$color-text;
-      font-weight: bold;
-      background: var.$color-gray;
-      border-radius: 0.6rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      background: rgba(var.$color-dark, 0.6);
+      border: 1px solid var.$color-border-strong;
+      border-radius: 2.75rem;
       cursor: pointer;
-      transition: color 0.2s;
+      transition: color 0.2s, border-color 0.2s, transform 0.15s,
+        box-shadow 0.2s;
       user-select: none;
 
-      &:hover {
-        color: color.adjust(var.$color-text, $lightness: 10%);
+      &:hover:not(:disabled) {
+        color: var.$color-text-strong;
+        border-color: rgba(var.$color-accent, 0.5);
+        transform: translateY(-1px);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0) scale(0.98);
       }
 
       &:disabled,
@@ -384,52 +434,94 @@ async function generateMultiple(count = 5 * 6) {
       }
     }
 
+    .action-download {
+      color: #fff;
+      background: linear-gradient(
+        115deg,
+        var.$color-primary,
+        var.$color-secondary
+      );
+      border-color: transparent;
+      box-shadow: 0 0.5rem 1.6rem rgba(var.$color-accent, 0.35);
+
+      &:hover:not(:disabled) {
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 0.6rem 2rem rgba(var.$color-accent, 0.5);
+      }
+
+      &:disabled,
+      &[disabled] {
+        color: rgba(#fff, 0.75);
+        background: linear-gradient(
+          115deg,
+          rgba(var.$color-primary, 0.55),
+          rgba(var.$color-secondary, 0.55)
+        );
+        box-shadow: none;
+      }
+    }
+
+    .action-multiple {
+      background: transparent;
+      border-style: dashed;
+    }
+
+    // 移动端:双列网格,批量生成整行
     @media screen and (max-width: var.$screen-sm) {
+      width: 100%;
+      max-width: 24rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+
+      .action-btn {
+        width: 100%;
+        min-width: 0;
+      }
+
       .action-multiple {
-        display: none;
+        grid-column: 1 / -1;
       }
     }
   }
 }
 
-@supports (filter: blur(4rem)) or (-webkit-filter: blur(4rem)) or
-  (-moz-filter: blur(4rem)) {
-  .gradient-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+// 极光背景光晕
+.gradient-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 
-    @mixin gradient-style($color) {
-      position: absolute;
-      width: 100vh;
-      height: 100vh;
-      background-image: radial-gradient(
-        rgba($color, 0.8) 20%,
-        rgba($color, 0.6) 40%,
-        rgba($color, 0.4) 60%,
-        rgba($color, 0.2) 80%,
-        transparent 100%
-      );
-      border-radius: 50%;
-      opacity: 0.2;
-      filter: blur(4rem);
-    }
+  @mixin gradient-style($color) {
+    position: absolute;
+    width: 100vh;
+    height: 100vh;
+    background-image: radial-gradient(
+      rgba($color, 0.55) 20%,
+      rgba($color, 0.35) 45%,
+      rgba($color, 0.15) 65%,
+      transparent 85%
+    );
+    border-radius: 50%;
+    opacity: 0.32;
+    filter: blur(4.5rem);
+  }
 
-    .gradient-top {
-      @include gradient-style(var.$color-secondary);
+  .gradient-top {
+    @include gradient-style(var.$color-secondary);
 
-      top: -50%;
-      right: -20%;
-    }
+    top: -55%;
+    right: -25%;
+  }
 
-    .gradient-bottom {
-      @include gradient-style(var.$color-accent);
+  .gradient-bottom {
+    @include gradient-style(var.$color-accent);
 
-      bottom: -50%;
-      left: -20%;
-    }
+    bottom: -55%;
+    left: -25%;
   }
 }
 </style>

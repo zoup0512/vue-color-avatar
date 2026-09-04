@@ -510,7 +510,8 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     max-height: 12rem;
     object-fit: contain;
     background: #fff;
-    border-radius: 0.5rem;
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.7rem;
   }
 
   .ai-option-group {
@@ -522,15 +523,16 @@ function handleBatchProgress(progress: { current: number; total: number }) {
   .ai-option-label,
   .prompt-label {
     margin-top: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: bold;
+    color: var.$color-text-strong;
+    font-size: 0.88rem;
+    font-weight: 600;
   }
 
   .ai-option-list {
     display: flex;
     column-gap: 0.4rem;
 
-    // 模板数量多，改为网格每行约 3 个自动换行，避免全部挤成一排
+    // 模板数量多,改为网格每行约 3 个自动换行,避免全部挤成一排
     &.wrap {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
@@ -549,22 +551,27 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
-    background: color.adjust(var.$color-dark, $lightness: 8%);
-    border: 0;
-    border-radius: 0.45rem;
+    background: rgba(var.$color-dark, 0.55);
+    border: 1px solid transparent;
+    border-radius: 0.6rem;
     outline: none;
+    transition: background-color 0.2s, border-color 0.2s;
 
     &:hover:not(:disabled),
     &:focus-visible {
       background: color.adjust(var.$color-dark, $lightness: 14%);
-      outline: 2px solid var.$color-primary;
-      outline-offset: 2px;
+      border-color: rgba(var.$color-accent, 0.5);
+      outline: none;
     }
 
     &.active {
       color: #fff;
-      font-weight: bold;
-      background: var.$color-primary;
+      font-weight: 600;
+      background: linear-gradient(
+        115deg,
+        var.$color-primary,
+        var.$color-secondary
+      );
     }
 
     &:disabled {
@@ -578,7 +585,7 @@ function handleBatchProgress(progress: { current: number; total: number }) {
       align-items: center;
       justify-content: center;
       gap: 0.15rem;
-      border: 1px dashed color.adjust(var.$color-dark, $lightness: 22%);
+      border: 1px dashed color.adjust(var.$color-dark, $lightness: 24%);
 
       .tpl-name {
         overflow: hidden;
@@ -620,9 +627,9 @@ function handleBatchProgress(progress: { current: number; total: number }) {
       color: var.$color-text;
       font: inherit;
       font-size: 0.85rem;
-      background: color.adjust(var.$color-dark, $lightness: 5%);
-      border: 1px solid color.adjust(var.$color-dark, $lightness: 15%);
-      border-radius: 0.45rem;
+      background: rgba(var.$color-dark, 0.55);
+      border: 1px solid var.$color-border-strong;
+      border-radius: 0.6rem;
       outline: none;
 
       &:focus {
@@ -648,9 +655,9 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     font: inherit;
     line-height: 1.5;
     resize: vertical;
-    background: color.adjust(var.$color-dark, $lightness: 5%);
-    border: 1px solid color.adjust(var.$color-dark, $lightness: 15%);
-    border-radius: 0.5rem;
+    background: rgba(var.$color-dark, 0.55);
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.7rem;
     outline: none;
 
     &:focus {
@@ -665,7 +672,7 @@ function handleBatchProgress(progress: { current: number; total: number }) {
 
   .prompt-count {
     margin-top: -0.4rem;
-    color: color.adjust(var.$color-text, $lightness: -15%);
+    color: var.$color-text-muted;
     font-size: 0.75rem;
     text-align: right;
   }
@@ -676,6 +683,22 @@ function handleBatchProgress(progress: { current: number; total: number }) {
 
     .ai-btn.primary {
       flex: 2;
+      color: #fff;
+      background: linear-gradient(
+        115deg,
+        var.$color-primary,
+        var.$color-secondary
+      );
+      box-shadow: 0 0.4rem 1.2rem rgba(var.$color-accent, 0.3);
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(
+          115deg,
+          color.adjust(var.$color-primary, $lightness: 5%),
+          color.adjust(var.$color-secondary, $lightness: 5%)
+        );
+        box-shadow: 0 0.5rem 1.5rem rgba(var.$color-accent, 0.4);
+      }
     }
 
     .ai-btn.batch-btn {
@@ -688,26 +711,22 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     padding: 0.65rem 0.8rem;
     color: var.$color-text;
     font: inherit;
+    font-weight: 500;
     cursor: pointer;
-    background: color.adjust(var.$color-dark, $lightness: 10%);
-    border: 0;
-    border-radius: 0.5rem;
+    background: rgba(var.$color-dark, 0.55);
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.7rem;
+    transition: background-color 0.2s, border-color 0.2s;
 
     &:hover:not(:disabled),
     &:focus-visible {
-      background: color.adjust(var.$color-dark, $lightness: 15%);
-      outline: 2px solid var.$color-primary;
-      outline-offset: 2px;
+      background: color.adjust(var.$color-dark, $lightness: 14%);
+      outline: none;
     }
 
     &:disabled {
       cursor: not-allowed;
       opacity: 0.5;
-    }
-
-    &.primary {
-      color: #fff;
-      background: var.$color-primary;
     }
 
     &.secondary {
