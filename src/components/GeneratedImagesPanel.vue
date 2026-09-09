@@ -26,6 +26,21 @@
         >
           <img :src="image" :alt="t('label.aiGeneratedImage')" loading="lazy" />
         </button>
+        <select
+          class="rating-select"
+          :aria-label="t('feedback.title')"
+          :value="getAIImageRecord(image)?.feedback.satisfaction ?? ''"
+          @change="rateImage(image, $event)"
+        >
+          <option value="">{{ t('feedback.unrated') }}</option>
+          <option
+            v-for="rating in AI_SATISFACTIONS"
+            :key="rating"
+            :value="rating"
+          >
+            {{ t(`feedback.${rating}`) }}
+          </option>
+        </select>
       </li>
     </ul>
 
@@ -44,6 +59,13 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import {
+  type AISatisfaction,
+  AI_SATISFACTIONS,
+  clearAIFeedbackRecords,
+  getAIImageRecord,
+  updateAIImageRecord,
+} from '@/services/ai-feedback'
 import { clearGeneratedImageHistory } from '@/services/ai-image'
 import { useStore } from '@/store'
 import {
@@ -56,6 +78,13 @@ const store = useStore()
 
 const reversedImages = computed(() => [...store.generatedImages].reverse())
 
+function rateImage(image: string, event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  updateAIImageRecord(image, {
+    satisfaction: value ? (value as AISatisfaction) : null,
+  })
+}
+
 function handleSelect(image: string) {
   store[SET_CURRENT_GENERATED_IMAGE](image)
 }
@@ -64,6 +93,7 @@ async function handleClear() {
   // 同步删除服务器端保存的历史;失败时仅清空本地列表
   await clearGeneratedImageHistory()
   store[CLEAR_GENERATED_IMAGES]()
+  clearAIFeedbackRecords()
 }
 </script>
 
@@ -88,6 +118,17 @@ async function handleClear() {
   box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(0.8rem);
   transform: translateY(-50%);
+
+  .rating-select {
+    width: 100%;
+    max-width: 5.5rem;
+    min-height: 1.8rem;
+    color: var.$color-text;
+    font-size: 0.65rem;
+    background: var.$color-dark;
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.4rem;
+  }
 
   .panel-header {
     flex-shrink: 0;
@@ -204,8 +245,12 @@ async function handleClear() {
         display: none;
       }
 
+      .image-item {
+        width: 4.5rem;
+      }
+
       .image-btn {
-        width: 3.4rem;
+        width: 4.5rem;
         flex-shrink: 0;
       }
     }

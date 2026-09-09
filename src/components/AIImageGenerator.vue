@@ -143,7 +143,6 @@
         v-model="prompt"
         class="prompt-input"
         rows="8"
-        :maxlength="MAX_AI_PROMPT_LENGTH"
         :disabled="generating"
         :placeholder="t('text.aiPromptPlaceholder')"
       />
@@ -201,12 +200,119 @@
         :templates="templateOptions"
         :prompts="promptDrafts[selectedGender]"
         :reference-image="referenceImage"
+        :gender="selectedGender"
         :gender-label="t(`gender.${selectedGender}`)"
         @generated="handleBatchGenerated"
         @progress="handleBatchProgress"
         @update:running="batchRunning = $event"
         @close="store[SET_AI_BATCH_MODAL_VISIBLE](false)"
       />
+      <section v-if="generatedImage" class="feedback-section">
+        <h3>{{ t('feedback.title') }}</h3>
+        <p class="feedback-hint">{{ t('feedback.localNotice') }}</p>
+        <p v-if="aiFeedbackStorageFailed" class="error-text">
+          {{ t('feedback.storageFailed') }}
+        </p>
+        <div class="ai-option-list wrap">
+          <button
+            v-for="rating in AI_SATISFACTIONS"
+            :key="rating"
+            type="button"
+            class="ai-option-btn"
+            :class="{ active: currentRecord?.feedback.satisfaction === rating }"
+            :aria-pressed="currentRecord?.feedback.satisfaction === rating"
+            @click="
+              updateAIImageRecord(generatedImage, {
+                satisfaction:
+                  currentRecord?.feedback.satisfaction === rating
+                    ? null
+                    : rating,
+              })
+            "
+          >
+            {{ t(`feedback.${rating}`) }}
+          </button>
+        </div>
+        <details v-if="currentRecord?.metadata">
+          <summary>{{ t('feedback.snapshot') }}</summary>
+          <p>
+            {{ currentRecord.metadata.templateId }} ·
+            {{ t(`gender.${currentRecord.metadata.gender}`) }}
+          </p>
+          <p>{{ currentRecord.metadata.revisionId }}</p>
+          <pre>{{ currentRecord.metadata.prompt }}</pre>
+        </details>
+        <p v-else class="feedback-hint">{{ t('feedback.unknown') }}</p>
+        <div class="ai-option-list wrap">
+          <button
+            v-for="tag in AI_FEEDBACK_TAGS"
+            :key="tag"
+            type="button"
+            class="ai-option-btn"
+            :class="{ active: feedbackDraft.tags.includes(tag) }"
+            :aria-pressed="feedbackDraft.tags.includes(tag)"
+            @click="toggleFeedbackTag(tag)"
+          >
+            {{ t(`feedback.tags.${tag}`) }}
+          </button>
+        </div>
+        <label class="prompt-label" for="ai-feedback-keep">{{
+          t('feedback.keep')
+        }}</label>
+        <textarea
+          id="ai-feedback-keep"
+          v-model="feedbackDraft.keep"
+          class="prompt-input"
+          rows="2"
+          :maxlength="MAX_FEEDBACK_TEXT_LENGTH"
+        />
+        <label class="prompt-label" for="ai-feedback-change">{{
+          t('feedback.change')
+        }}</label>
+        <textarea
+          id="ai-feedback-change"
+          v-model="feedbackDraft.change"
+          class="prompt-input"
+          rows="2"
+          :maxlength="MAX_FEEDBACK_TEXT_LENGTH"
+        />
+        <button type="button" class="ai-btn secondary" @click="saveFeedback">
+          {{ t('feedback.save') }}
+        </button>
+        <button
+          type="button"
+          class="ai-btn secondary"
+          :disabled="!currentRecord?.metadata"
+          @click="previewVisible = true"
+        >
+          {{ t('feedback.preview') }}
+        </button>
+        <template v-if="previewVisible && currentRecord?.metadata">
+          <pre class="refinement-preview">{{ refinementPreview }}</pre>
+          <p class="feedback-hint">
+            {{ refinementPreview.length }} / {{ MAX_AI_PROMPT_LENGTH }}
+          </p>
+          <p v-if="!refinementValid" class="error-text">
+            {{ t('feedback.tooLong') }}
+          </p>
+          <button
+            type="button"
+            class="ai-btn secondary"
+            :disabled="!refinementValid"
+            @click="applyFeedback"
+          >
+            {{ t('feedback.apply') }}
+          </button>
+        </template>
+        <button
+          type="button"
+          class="ai-btn"
+          :disabled="!appliedRefinement || generating || !referenceImage"
+          @click="regenerateFeedback"
+        >
+          {{ t('feedback.regenerate') }}
+        </button>
+      </section>
     </div>
   </SectionWrapper>
 </template>
@@ -219,6 +325,22 @@ import defaultReferenceImageUrl from '@/assets/ai-reference-default.jpg'
 import AIBatchGenerateModal from '@/components/Modal/AIBatchGenerateModal.vue'
 import SectionWrapper from '@/components/SectionWrapper.vue'
 import { Gender } from '@/enums'
+import {
+  type AIFeedback,
+  type AIFeedbackTag,
+  type AIGeneratedPayload,
+  type AIGenerationMetadata,
+  AI_FEEDBACK_TAGS,
+  AI_SATISFACTIONS,
+  aiFeedbackStorageFailed,
+  buildRefinementPrompt,
+  createGenerationMetadata,
+  emptyAIFeedback,
+  getAIImageRecord,
+  imageIdentity,
+  MAX_FEEDBACK_TEXT_LENGTH,
+  updateAIImageRecord,
+} from '@/services/ai-feedback'
 import {
   type AICustomTemplate,
   type AIGender,
@@ -295,6 +417,85 @@ const templateOptions = computed<AITemplateOption[]>(() => [
 ])
 
 const generatedImage = computed(() => store.generatedImage)
+const currentRecord = computed(() =>
+  generatedImage.value ? getAIImageRecord(generatedImage.value) : undefined
+)
+const feedbackDraft = ref(emptyAIFeedback())
+const previewVisible = ref(false)
+const appliedRefinement = ref<AIGenerationMetadata | null>(null)
+const refinementPreview = computed(() =>
+  buildRefinementPrompt(
+    currentRecord.value?.metadata?.templatePrompt ?? '',
+    feedbackDraft.value,
+    {
+      keep: t('feedback.keep'),
+      change: t('feedback.change'),
+      tags: Object.fromEntries(
+        AI_FEEDBACK_TAGS.map((tag) => [tag, t(`feedback.tags.${tag}`)])
+      ) as Record<AIFeedbackTag, string>,
+    }
+  )
+)
+const refinementValid = computed(
+  () =>
+    !!refinementPreview.value.trim() &&
+    refinementPreview.value.length <= MAX_AI_PROMPT_LENGTH
+)
+watch(
+  generatedImage,
+  () => {
+    const feedback = currentRecord.value?.feedback ?? emptyAIFeedback()
+    feedbackDraft.value = { ...feedback, tags: [...feedback.tags] }
+    previewVisible.value = false
+    appliedRefinement.value = null
+  },
+  { immediate: true }
+)
+watch(
+  refinementPreview,
+  () => {
+    appliedRefinement.value = null
+  },
+  { flush: 'sync' }
+)
+function toggleFeedbackTag(tag: AIFeedbackTag) {
+  feedbackDraft.value.tags = feedbackDraft.value.tags.includes(tag)
+    ? feedbackDraft.value.tags.filter((item) => item !== tag)
+    : [...feedbackDraft.value.tags, tag]
+}
+function saveFeedback() {
+  updateAIImageRecord(generatedImage.value, {
+    tags: [...feedbackDraft.value.tags],
+    keep: feedbackDraft.value.keep,
+    change: feedbackDraft.value.change,
+    appliedPrompt: appliedRefinement.value?.prompt ?? null,
+  })
+}
+function applyFeedback() {
+  const metadata = currentRecord.value?.metadata
+  if (!metadata || !refinementValid.value) return
+  appliedRefinement.value = createGenerationMetadata(
+    metadata.templateId,
+    metadata.gender,
+    metadata.templatePrompt,
+    refinementPreview.value,
+    imageIdentity(generatedImage.value)
+  )
+  saveFeedback()
+}
+async function regenerateFeedback() {
+  if (appliedRefinement.value)
+    await runGeneration(
+      { ...appliedRefinement.value, createdAt: Date.now() },
+      {
+        ...feedbackDraft.value,
+        tags: [...feedbackDraft.value.tags],
+        satisfaction: null,
+        appliedPrompt: null,
+      }
+    )
+}
+
 const errorText = computed(() =>
   errorCode.value ? t(`text.aiError.${errorCode.value}`) : ''
 )
@@ -467,12 +668,30 @@ function removeImage() {
 async function handleGenerate() {
   if (!referenceImage.value || generating.value) return
 
+  try {
+    const metadata = createGenerationMetadata(
+      selectedTemplateId.value,
+      selectedGender.value,
+      prompt.value
+    )
+    flushCustomTemplateDraft()
+    await runGeneration(metadata)
+  } catch (error) {
+    errorCode.value =
+      error instanceof AIImageError ? error.code : 'generate_failed'
+  }
+}
+
+async function runGeneration(
+  metadata: AIGenerationMetadata,
+  feedback?: AIFeedback
+) {
+  if (!referenceImage.value || generating.value) return
   errorCode.value = ''
   singleGenerating.value = true
-  flushCustomTemplateDraft()
-
   try {
-    const image = await generateAIImage(referenceImage.value, prompt.value)
+    const image = await generateAIImage(referenceImage.value, metadata.prompt)
+    updateAIImageRecord(image, feedback, metadata)
     store[SET_GENERATED_IMAGE](image)
   } catch (error) {
     errorCode.value =
@@ -482,7 +701,8 @@ async function handleGenerate() {
   }
 }
 
-function handleBatchGenerated(image: string) {
+function handleBatchGenerated({ image, metadata }: AIGeneratedPayload) {
+  updateAIImageRecord(image, undefined, metadata)
   store[SET_GENERATED_IMAGE](image)
 }
 
@@ -499,6 +719,31 @@ function handleBatchProgress(progress: { current: number; total: number }) {
   display: flex;
   flex-direction: column;
   row-gap: 0.8rem;
+
+  .feedback-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+    padding-top: 0.8rem;
+    border-top: 1px solid var.$color-border-strong;
+
+    .ai-option-btn {
+      white-space: normal;
+    }
+    details,
+    pre {
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+  }
+
+  .feedback-hint {
+    margin: 0;
+    color: var.$color-text-muted;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
 
   .file-input {
     display: none;

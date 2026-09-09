@@ -83,7 +83,15 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import ModalWrapper from '@/components/Modal/ModalWrapper.vue'
-import { type AITemplateOption, generateAIImage } from '@/services/ai-image'
+import {
+  type AIGeneratedPayload,
+  createGenerationMetadata,
+} from '@/services/ai-feedback'
+import {
+  type AIGender,
+  type AITemplateOption,
+  generateAIImage,
+} from '@/services/ai-image'
 
 type BatchStatus = 'pending' | 'running' | 'done' | 'failed'
 
@@ -92,12 +100,13 @@ const props = defineProps<{
   templates?: AITemplateOption[]
   prompts?: Record<string, string>
   referenceImage?: string
+  gender: AIGender
   genderLabel?: string
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'generated', image: string): void
+  (e: 'generated', payload: AIGeneratedPayload): void
   (e: 'update:running', value: boolean): void
   (e: 'progress', progress: { current: number; total: number }): void
 }>()
@@ -195,6 +204,9 @@ async function start() {
     return
   }
 
+  const reference = props.referenceImage
+  const gender = props.gender
+  const prompts = { ...props.prompts }
   nothingSelectedHintShown.value = false
   running.value = true
   stopRequested.value = false
@@ -219,11 +231,13 @@ async function start() {
 
     statuses[templateId] = 'running'
     try {
-      const image = await generateAIImage(
-        props.referenceImage,
-        getPrompt(templateId)
+      const metadata = createGenerationMetadata(
+        templateId,
+        gender,
+        prompts[templateId] ?? ''
       )
-      emit('generated', image)
+      const image = await generateAIImage(reference, metadata.prompt)
+      emit('generated', { image, metadata })
       successCount.value += 1
       statuses[templateId] = 'done'
     } catch {

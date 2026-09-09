@@ -287,7 +287,7 @@ function normalizeErrorCode(code?: string): AIImageErrorCode {
 
 export async function generateAIImage(image: string, prompt: string) {
   const normalizedPrompt = prompt.trim()
-  if (!normalizedPrompt) {
+  if (!normalizedPrompt || normalizedPrompt.length > MAX_AI_PROMPT_LENGTH) {
     throw new AIImageError('invalid_prompt')
   }
 
