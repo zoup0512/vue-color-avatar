@@ -1,0 +1,29 @@
+# vue-color-avatar 局域网 Docker 部署
+# 目录布局（由 deploy/docker/build-bundle.sh 组装）:
+#   ./docker-compose.yml  ./api.env  ./api/  ./web/
+# api 不对外发布端口，仅 compose 内网供 web 反代访问；
+# web 发布到宿主机 8081（避开 80/443 与 NAS 已占用端口）。
+services:
+  api:
+    build: ./api
+    image: vue-color-avatar-api:latest
+    container_name: vue-color-avatar-api
+    restart: unless-stopped
+    env_file: api.env
+    environment:
+      PORT: "8787"
+      HISTORY_DIR: /data/history
+    volumes:
+      - ./data/history:/data/history
+    expose:
+      - "8787"
+
+  web:
+    build: ./web
+    image: vue-color-avatar-web:latest
+    container_name: vue-color-avatar-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
