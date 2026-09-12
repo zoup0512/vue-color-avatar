@@ -524,7 +524,7 @@ onMounted(async () => {
   if (history.length > 0) {
     store[SET_GENERATED_IMAGES]([...history].reverse())
     // 默认展示最新一张历史生图，避免 AI 模式回退显示普通头像
-    store[SET_CURRENT_GENERATED_IMAGE](history[0])
+    store[SET_CURRENT_GENERATED_IMAGE](history[0].url)
   }
 })
 
