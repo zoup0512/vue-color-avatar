@@ -29,6 +29,21 @@
         >
           <img :src="image" :alt="t('label.aiGeneratedImage')" loading="lazy" />
         </button>
+        <select
+          class="rating-select"
+          :aria-label="t('feedback.title')"
+          :value="getAIImageRecord(image)?.feedback.satisfaction ?? ''"
+          @change="rateImage(image, $event)"
+        >
+          <option value="">{{ t('feedback.unrated') }}</option>
+          <option
+            v-for="rating in AI_SATISFACTIONS"
+            :key="rating"
+            :value="rating"
+          >
+            {{ t(`feedback.${rating}`) }}
+          </option>
+        </select>
       </li>
     </ul>
 
@@ -47,6 +62,13 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import {
+  type AISatisfaction,
+  AI_SATISFACTIONS,
+  clearAIFeedbackRecords,
+  getAIImageRecord,
+  updateAIImageRecord,
+} from '@/services/ai-feedback'
 import { clearGeneratedImageHistory } from '@/services/ai-image'
 import { useStore } from '@/store'
 import {
@@ -59,14 +81,22 @@ const store = useStore()
 
 const reversedImages = computed(() => [...store.generatedImages].reverse())
 
+function rateImage(image: string, event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  updateAIImageRecord(image, {
+    satisfaction: value ? (value as AISatisfaction) : null,
+  })
+}
+
 function handleSelect(image: string) {
   store[SET_CURRENT_GENERATED_IMAGE](image)
 }
 
 async function handleClear() {
-  // 同步删除服务器端保存的历史；失败时仅清空本地列表
+  // 同步删除服务器端保存的历史;失败时仅清空本地列表
   await clearGeneratedImageHistory()
   store[CLEAR_GENERATED_IMAGES]()
+  clearAIFeedbackRecords()
 }
 </script>
 
@@ -74,26 +104,43 @@ async function handleClear() {
 @use 'src/styles/var';
 @use 'sass:color';
 
+// 桌面端:舞台右侧竖排玻璃卡片
 .generated-images-panel {
   position: absolute;
-  top: 0;
-  right: 1rem;
-  bottom: 0;
+  top: 50%;
+  right: max(1rem, calc(50% - 22rem));
   display: flex;
   flex-direction: column;
   row-gap: 0.5rem;
   width: 5.5rem;
-  padding: 0.6rem;
-  background: color.adjust(var.$color-dark, $lightness: 5%);
-  border-radius: 0.6rem;
-  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.35);
+  max-height: 80%;
+  padding: 0.7rem 0.6rem;
+  background: rgba(var.$color-dark, 0.6);
+  border: 1px solid var.$color-border-strong;
+  border-radius: 0.9rem;
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(0.8rem);
+  transform: translateY(-50%);
+
+  .rating-select {
+    width: 100%;
+    max-width: 5.5rem;
+    min-height: 1.8rem;
+    color: var.$color-text;
+    font-size: 0.65rem;
+    background: var.$color-dark;
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.4rem;
+  }
 
   .panel-header {
+    flex-shrink: 0;
     text-align: center;
 
     .panel-title {
-      font-size: 0.78rem;
-      font-weight: bold;
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
       white-space: nowrap;
     }
   }
@@ -101,19 +148,19 @@ async function handleClear() {
   .clear-btn {
     flex-shrink: 0;
     padding: 0.25rem 0;
-    color: color.adjust(var.$color-text, $lightness: -10%);
+    color: var.$color-text-muted;
     font: inherit;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     white-space: nowrap;
     cursor: pointer;
     background: transparent;
     border: 0;
-    border-radius: 0.3rem;
+    border-radius: 0.4rem;
 
     &:hover,
     &:focus-visible {
-      color: var.$color-text;
-      background: color.adjust(var.$color-dark, $lightness: 12%);
+      color: #ff8794;
+      background: color.adjust(var.$color-dark, $lightness: 10%);
       outline: none;
     }
   }
@@ -134,7 +181,7 @@ async function handleClear() {
     }
 
     &::-webkit-scrollbar-thumb {
-      background: color.adjust(var.$color-dark, $lightness: 20%);
+      background: color.adjust(var.$color-dark, $lightness: 22%);
       border-radius: 2px;
     }
 
@@ -149,7 +196,7 @@ async function handleClear() {
       cursor: pointer;
       background: transparent;
       border: 2px solid transparent;
-      border-radius: 0.45rem;
+      border-radius: 0.5rem;
       outline: none;
 
       img {
@@ -165,15 +212,58 @@ async function handleClear() {
 
       &:hover:not(.active),
       &:focus-visible {
-        border-color: color.adjust(var.$color-text, $lightness: -20%);
+        border-color: rgba(var.$color-text, 0.4);
       }
     }
   }
 }
 
-@media screen and (max-width: var.$screen-sm) {
+// 移动端:舞台下方横向滑动条
+@media screen and (max-width: var.$screen-lg) {
   .generated-images-panel {
-    display: none;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    max-width: 26rem;
+    max-height: none;
+    margin-top: 1.1rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 1rem;
+    transform: none;
+
+    .panel-header {
+      display: none;
+    }
+
+    .image-list {
+      flex-direction: row;
+      column-gap: 0.5rem;
+      overflow-y: hidden;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      .image-item {
+        width: 4.5rem;
+      }
+
+      .image-btn {
+        width: 4.5rem;
+        flex-shrink: 0;
+      }
+    }
+
+    .clear-btn {
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+      padding: 0.4rem 0.55rem;
+      font-size: 0.72rem;
+    }
   }
 }
 </style>

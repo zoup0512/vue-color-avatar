@@ -143,7 +143,6 @@
         v-model="prompt"
         class="prompt-input"
         rows="8"
-        :maxlength="MAX_AI_PROMPT_LENGTH"
         :disabled="generating"
         :placeholder="t('text.aiPromptPlaceholder')"
       />
@@ -201,12 +200,119 @@
         :templates="templateOptions"
         :prompts="promptDrafts[selectedGender]"
         :reference-image="referenceImage"
+        :gender="selectedGender"
         :gender-label="t(`gender.${selectedGender}`)"
         @generated="handleBatchGenerated"
         @progress="handleBatchProgress"
         @update:running="batchRunning = $event"
         @close="store[SET_AI_BATCH_MODAL_VISIBLE](false)"
       />
+      <section v-if="generatedImage" class="feedback-section">
+        <h3>{{ t('feedback.title') }}</h3>
+        <p class="feedback-hint">{{ t('feedback.localNotice') }}</p>
+        <p v-if="aiFeedbackStorageFailed" class="error-text">
+          {{ t('feedback.storageFailed') }}
+        </p>
+        <div class="ai-option-list wrap">
+          <button
+            v-for="rating in AI_SATISFACTIONS"
+            :key="rating"
+            type="button"
+            class="ai-option-btn"
+            :class="{ active: currentRecord?.feedback.satisfaction === rating }"
+            :aria-pressed="currentRecord?.feedback.satisfaction === rating"
+            @click="
+              updateAIImageRecord(generatedImage, {
+                satisfaction:
+                  currentRecord?.feedback.satisfaction === rating
+                    ? null
+                    : rating,
+              })
+            "
+          >
+            {{ t(`feedback.${rating}`) }}
+          </button>
+        </div>
+        <details v-if="currentRecord?.metadata">
+          <summary>{{ t('feedback.snapshot') }}</summary>
+          <p>
+            {{ currentRecord.metadata.templateId }} ·
+            {{ t(`gender.${currentRecord.metadata.gender}`) }}
+          </p>
+          <p>{{ currentRecord.metadata.revisionId }}</p>
+          <pre>{{ currentRecord.metadata.prompt }}</pre>
+        </details>
+        <p v-else class="feedback-hint">{{ t('feedback.unknown') }}</p>
+        <div class="ai-option-list wrap">
+          <button
+            v-for="tag in AI_FEEDBACK_TAGS"
+            :key="tag"
+            type="button"
+            class="ai-option-btn"
+            :class="{ active: feedbackDraft.tags.includes(tag) }"
+            :aria-pressed="feedbackDraft.tags.includes(tag)"
+            @click="toggleFeedbackTag(tag)"
+          >
+            {{ t(`feedback.tags.${tag}`) }}
+          </button>
+        </div>
+        <label class="prompt-label" for="ai-feedback-keep">{{
+          t('feedback.keep')
+        }}</label>
+        <textarea
+          id="ai-feedback-keep"
+          v-model="feedbackDraft.keep"
+          class="prompt-input"
+          rows="2"
+          :maxlength="MAX_FEEDBACK_TEXT_LENGTH"
+        />
+        <label class="prompt-label" for="ai-feedback-change">{{
+          t('feedback.change')
+        }}</label>
+        <textarea
+          id="ai-feedback-change"
+          v-model="feedbackDraft.change"
+          class="prompt-input"
+          rows="2"
+          :maxlength="MAX_FEEDBACK_TEXT_LENGTH"
+        />
+        <button type="button" class="ai-btn secondary" @click="saveFeedback">
+          {{ t('feedback.save') }}
+        </button>
+        <button
+          type="button"
+          class="ai-btn secondary"
+          :disabled="!currentRecord?.metadata"
+          @click="previewVisible = true"
+        >
+          {{ t('feedback.preview') }}
+        </button>
+        <template v-if="previewVisible && currentRecord?.metadata">
+          <pre class="refinement-preview">{{ refinementPreview }}</pre>
+          <p class="feedback-hint">
+            {{ refinementPreview.length }} / {{ MAX_AI_PROMPT_LENGTH }}
+          </p>
+          <p v-if="!refinementValid" class="error-text">
+            {{ t('feedback.tooLong') }}
+          </p>
+          <button
+            type="button"
+            class="ai-btn secondary"
+            :disabled="!refinementValid"
+            @click="applyFeedback"
+          >
+            {{ t('feedback.apply') }}
+          </button>
+        </template>
+        <button
+          type="button"
+          class="ai-btn"
+          :disabled="!appliedRefinement || generating || !referenceImage"
+          @click="regenerateFeedback"
+        >
+          {{ t('feedback.regenerate') }}
+        </button>
+      </section>
     </div>
   </SectionWrapper>
 </template>
@@ -219,6 +325,22 @@ import defaultReferenceImageUrl from '@/assets/ai-reference-default.jpg'
 import AIBatchGenerateModal from '@/components/Modal/AIBatchGenerateModal.vue'
 import SectionWrapper from '@/components/SectionWrapper.vue'
 import { Gender } from '@/enums'
+import {
+  type AIFeedback,
+  type AIFeedbackTag,
+  type AIGeneratedPayload,
+  type AIGenerationMetadata,
+  AI_FEEDBACK_TAGS,
+  AI_SATISFACTIONS,
+  aiFeedbackStorageFailed,
+  buildRefinementPrompt,
+  createGenerationMetadata,
+  emptyAIFeedback,
+  getAIImageRecord,
+  imageIdentity,
+  MAX_FEEDBACK_TEXT_LENGTH,
+  updateAIImageRecord,
+} from '@/services/ai-feedback'
 import {
   type AICustomTemplate,
   type AIGender,
@@ -295,6 +417,85 @@ const templateOptions = computed<AITemplateOption[]>(() => [
 ])
 
 const generatedImage = computed(() => store.generatedImage)
+const currentRecord = computed(() =>
+  generatedImage.value ? getAIImageRecord(generatedImage.value) : undefined
+)
+const feedbackDraft = ref(emptyAIFeedback())
+const previewVisible = ref(false)
+const appliedRefinement = ref<AIGenerationMetadata | null>(null)
+const refinementPreview = computed(() =>
+  buildRefinementPrompt(
+    currentRecord.value?.metadata?.templatePrompt ?? '',
+    feedbackDraft.value,
+    {
+      keep: t('feedback.keep'),
+      change: t('feedback.change'),
+      tags: Object.fromEntries(
+        AI_FEEDBACK_TAGS.map((tag) => [tag, t(`feedback.tags.${tag}`)])
+      ) as Record<AIFeedbackTag, string>,
+    }
+  )
+)
+const refinementValid = computed(
+  () =>
+    !!refinementPreview.value.trim() &&
+    refinementPreview.value.length <= MAX_AI_PROMPT_LENGTH
+)
+watch(
+  generatedImage,
+  () => {
+    const feedback = currentRecord.value?.feedback ?? emptyAIFeedback()
+    feedbackDraft.value = { ...feedback, tags: [...feedback.tags] }
+    previewVisible.value = false
+    appliedRefinement.value = null
+  },
+  { immediate: true }
+)
+watch(
+  refinementPreview,
+  () => {
+    appliedRefinement.value = null
+  },
+  { flush: 'sync' }
+)
+function toggleFeedbackTag(tag: AIFeedbackTag) {
+  feedbackDraft.value.tags = feedbackDraft.value.tags.includes(tag)
+    ? feedbackDraft.value.tags.filter((item) => item !== tag)
+    : [...feedbackDraft.value.tags, tag]
+}
+function saveFeedback() {
+  updateAIImageRecord(generatedImage.value, {
+    tags: [...feedbackDraft.value.tags],
+    keep: feedbackDraft.value.keep,
+    change: feedbackDraft.value.change,
+    appliedPrompt: appliedRefinement.value?.prompt ?? null,
+  })
+}
+function applyFeedback() {
+  const metadata = currentRecord.value?.metadata
+  if (!metadata || !refinementValid.value) return
+  appliedRefinement.value = createGenerationMetadata(
+    metadata.templateId,
+    metadata.gender,
+    metadata.templatePrompt,
+    refinementPreview.value,
+    imageIdentity(generatedImage.value)
+  )
+  saveFeedback()
+}
+async function regenerateFeedback() {
+  if (appliedRefinement.value)
+    await runGeneration(
+      { ...appliedRefinement.value, createdAt: Date.now() },
+      {
+        ...feedbackDraft.value,
+        tags: [...feedbackDraft.value.tags],
+        satisfaction: null,
+        appliedPrompt: null,
+      }
+    )
+}
+
 const errorText = computed(() =>
   errorCode.value ? t(`text.aiError.${errorCode.value}`) : ''
 )
@@ -318,7 +519,7 @@ onMounted(async () => {
   if (history.length > 0) {
     store[SET_GENERATED_IMAGES]([...history].reverse())
     // 默认展示最新一张历史生图，避免 AI 模式回退显示普通头像
-    store[SET_CURRENT_GENERATED_IMAGE](history[0].url)
+    store[SET_CURRENT_GENERATED_IMAGE](history[0])
   }
 })
 
@@ -467,13 +668,31 @@ function removeImage() {
 async function handleGenerate() {
   if (!referenceImage.value || generating.value) return
 
+  try {
+    const metadata = createGenerationMetadata(
+      selectedTemplateId.value,
+      selectedGender.value,
+      prompt.value
+    )
+    flushCustomTemplateDraft()
+    await runGeneration(metadata)
+  } catch (error) {
+    errorCode.value =
+      error instanceof AIImageError ? error.code : 'generate_failed'
+  }
+}
+
+async function runGeneration(
+  metadata: AIGenerationMetadata,
+  feedback?: AIFeedback
+) {
+  if (!referenceImage.value || generating.value) return
   errorCode.value = ''
   singleGenerating.value = true
-  flushCustomTemplateDraft()
-
   try {
-    const image = await generateAIImage(referenceImage.value, prompt.value)
-    store[SET_GENERATED_IMAGE](image, prompt.value)
+    const image = await generateAIImage(referenceImage.value, metadata.prompt)
+    updateAIImageRecord(image, feedback, metadata)
+    store[SET_GENERATED_IMAGE](image)
   } catch (error) {
     errorCode.value =
       error instanceof AIImageError ? error.code : 'generate_failed'
@@ -482,8 +701,9 @@ async function handleGenerate() {
   }
 }
 
-function handleBatchGenerated(image: string, prompt: string) {
-  store[SET_GENERATED_IMAGE](image, prompt)
+function handleBatchGenerated({ image, metadata }: AIGeneratedPayload) {
+  updateAIImageRecord(image, undefined, metadata)
+  store[SET_GENERATED_IMAGE](image)
 }
 
 function handleBatchProgress(progress: { current: number; total: number }) {
@@ -500,6 +720,31 @@ function handleBatchProgress(progress: { current: number; total: number }) {
   flex-direction: column;
   row-gap: 0.8rem;
 
+  .feedback-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+    padding-top: 0.8rem;
+    border-top: 1px solid var.$color-border-strong;
+
+    .ai-option-btn {
+      white-space: normal;
+    }
+    details,
+    pre {
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+  }
+
+  .feedback-hint {
+    margin: 0;
+    color: var.$color-text-muted;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
   .file-input {
     display: none;
   }
@@ -510,7 +755,8 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     max-height: 12rem;
     object-fit: contain;
     background: #fff;
-    border-radius: 0.5rem;
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.7rem;
   }
 
   .ai-option-group {
@@ -522,15 +768,16 @@ function handleBatchProgress(progress: { current: number; total: number }) {
   .ai-option-label,
   .prompt-label {
     margin-top: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: bold;
+    color: var.$color-text-strong;
+    font-size: 0.88rem;
+    font-weight: 600;
   }
 
   .ai-option-list {
     display: flex;
     column-gap: 0.4rem;
 
-    // 模板数量多，改为网格每行约 3 个自动换行，避免全部挤成一排
+    // 模板数量多,改为网格每行约 3 个自动换行,避免全部挤成一排
     &.wrap {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
@@ -549,22 +796,27 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
-    background: color.adjust(var.$color-dark, $lightness: 8%);
-    border: 0;
-    border-radius: 0.45rem;
+    background: rgba(var.$color-dark, 0.55);
+    border: 1px solid transparent;
+    border-radius: 0.6rem;
     outline: none;
+    transition: background-color 0.2s, border-color 0.2s;
 
     &:hover:not(:disabled),
     &:focus-visible {
       background: color.adjust(var.$color-dark, $lightness: 14%);
-      outline: 2px solid var.$color-primary;
-      outline-offset: 2px;
+      border-color: rgba(var.$color-accent, 0.5);
+      outline: none;
     }
 
     &.active {
       color: #fff;
-      font-weight: bold;
-      background: var.$color-primary;
+      font-weight: 600;
+      background: linear-gradient(
+        115deg,
+        var.$color-primary,
+        var.$color-secondary
+      );
     }
 
     &:disabled {
@@ -578,7 +830,7 @@ function handleBatchProgress(progress: { current: number; total: number }) {
       align-items: center;
       justify-content: center;
       gap: 0.15rem;
-      border: 1px dashed color.adjust(var.$color-dark, $lightness: 22%);
+      border: 1px dashed color.adjust(var.$color-dark, $lightness: 24%);
 
       .tpl-name {
         overflow: hidden;
@@ -620,9 +872,9 @@ function handleBatchProgress(progress: { current: number; total: number }) {
       color: var.$color-text;
       font: inherit;
       font-size: 0.85rem;
-      background: color.adjust(var.$color-dark, $lightness: 5%);
-      border: 1px solid color.adjust(var.$color-dark, $lightness: 15%);
-      border-radius: 0.45rem;
+      background: rgba(var.$color-dark, 0.55);
+      border: 1px solid var.$color-border-strong;
+      border-radius: 0.6rem;
       outline: none;
 
       &:focus {
@@ -648,9 +900,9 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     font: inherit;
     line-height: 1.5;
     resize: vertical;
-    background: color.adjust(var.$color-dark, $lightness: 5%);
-    border: 1px solid color.adjust(var.$color-dark, $lightness: 15%);
-    border-radius: 0.5rem;
+    background: rgba(var.$color-dark, 0.55);
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.7rem;
     outline: none;
 
     &:focus {
@@ -665,7 +917,7 @@ function handleBatchProgress(progress: { current: number; total: number }) {
 
   .prompt-count {
     margin-top: -0.4rem;
-    color: color.adjust(var.$color-text, $lightness: -15%);
+    color: var.$color-text-muted;
     font-size: 0.75rem;
     text-align: right;
   }
@@ -676,6 +928,22 @@ function handleBatchProgress(progress: { current: number; total: number }) {
 
     .ai-btn.primary {
       flex: 2;
+      color: #fff;
+      background: linear-gradient(
+        115deg,
+        var.$color-primary,
+        var.$color-secondary
+      );
+      box-shadow: 0 0.4rem 1.2rem rgba(var.$color-accent, 0.3);
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(
+          115deg,
+          color.adjust(var.$color-primary, $lightness: 5%),
+          color.adjust(var.$color-secondary, $lightness: 5%)
+        );
+        box-shadow: 0 0.5rem 1.5rem rgba(var.$color-accent, 0.4);
+      }
     }
 
     .ai-btn.batch-btn {
@@ -688,26 +956,22 @@ function handleBatchProgress(progress: { current: number; total: number }) {
     padding: 0.65rem 0.8rem;
     color: var.$color-text;
     font: inherit;
+    font-weight: 500;
     cursor: pointer;
-    background: color.adjust(var.$color-dark, $lightness: 10%);
-    border: 0;
-    border-radius: 0.5rem;
+    background: rgba(var.$color-dark, 0.55);
+    border: 1px solid var.$color-border-strong;
+    border-radius: 0.7rem;
+    transition: background-color 0.2s, border-color 0.2s;
 
     &:hover:not(:disabled),
     &:focus-visible {
-      background: color.adjust(var.$color-dark, $lightness: 15%);
-      outline: 2px solid var.$color-primary;
-      outline-offset: 2px;
+      background: color.adjust(var.$color-dark, $lightness: 14%);
+      outline: none;
     }
 
     &:disabled {
       cursor: not-allowed;
       opacity: 0.5;
-    }
-
-    &.primary {
-      color: #fff;
-      background: var.$color-primary;
     }
 
     &.secondary {

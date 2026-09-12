@@ -442,41 +442,49 @@ function getWidgetColor(type: string) {
 .configurator-shell {
   display: flex;
   flex-direction: column;
-  width: var.$layout-sider-width;
+  width: 100%;
   height: 100%;
   color: var.$color-text;
-  background-color: var.$color-configurator;
+  background-color: transparent;
 }
 
 .configurator-tabs {
   display: flex;
   flex-shrink: 0;
-  padding: 0.6rem;
-  column-gap: 0.5rem;
-  border-bottom: 1px solid color.adjust(var.$color-dark, $lightness: 10%);
+  gap: 0.3rem;
+  padding: 0.8rem;
+  background: color.adjust(var.$color-dark, $lightness: 4%);
+  border-radius: 1rem;
+  margin: 0.8rem 0.8rem 0;
 }
 
 .configurator-tab {
   flex: 1;
-  padding: 0.7rem 0.4rem;
-  color: var.$color-text;
+  padding: 0.65rem 0.4rem;
+  color: rgba(var.$color-text, 0.78);
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
   background: transparent;
   border: 0;
-  border-radius: 0.45rem;
+  border-radius: 0.7rem;
   outline: none;
-  transition: color 0.2s, background-color 0.2s;
+  transition: color 0.2s, background-color 0.2s, box-shadow 0.2s;
 
   &:hover,
   &:focus-visible {
-    background-color: color.adjust(var.$color-dark, $lightness: 7%);
+    color: var.$color-text-strong;
+    background: color.adjust(var.$color-dark, $lightness: 8%);
   }
 
   &.active {
     color: #fff;
-    font-weight: bold;
-    background-color: var.$color-primary;
+    background: linear-gradient(
+      115deg,
+      var.$color-primary,
+      var.$color-secondary
+    );
+    box-shadow: 0 0.35rem 1rem rgba(var.$color-accent, 0.35);
   }
 }
 
@@ -484,10 +492,13 @@ function getWidgetColor(type: string) {
   flex: 1;
   width: 100%;
   min-height: 0;
+  // 抽屉内滚动到底时不再链式滚动外层页面
+  overscroll-behavior: contain;
 }
 
 .configurator {
   width: 100%;
+  padding-bottom: 1rem;
   color: var.$color-text;
 
   .wrapper-shape {
@@ -502,8 +513,8 @@ function getWidgetColor(type: string) {
         display: inline-block;
         width: 1.5rem;
         height: 1.5rem;
-        background-color: var.$color-text;
-        transition: background-color 0.2s;
+        background-color: color.adjust(var.$color-text, $lightness: -25%);
+        transition: background-color 0.2s, transform 0.15s;
 
         &.circle {
           border-radius: 50%;
@@ -513,8 +524,16 @@ function getWidgetColor(type: string) {
           border-radius: 20%;
         }
 
+        &:hover {
+          transform: scale(1.1);
+        }
+
         &.active {
-          background-color: var.$color-accent;
+          background: linear-gradient(
+            115deg,
+            var.$color-primary,
+            var.$color-secondary
+          );
         }
       }
     }
@@ -524,10 +543,14 @@ function getWidgetColor(type: string) {
     margin: 1rem 0 0.5rem 0;
 
     summary {
-      color: color.adjust(var.$color-text, $lightness: -20%);
+      color: var.$color-text-muted;
       font-size: small;
       cursor: pointer;
       user-select: none;
+
+      &:hover {
+        color: var.$color-text;
+      }
     }
   }
 
@@ -552,7 +575,7 @@ function getWidgetColor(type: string) {
         margin: 0 auto;
         font-size: 16px;
         border-radius: 50%;
-        box-shadow: 0 0 0.05em 0.2em var.$color-configurator;
+        box-shadow: 0 0 0.05em 0.2em rgba(var.$color-dark, 0.92);
 
         &.transparent {
           background: #fff !important;
@@ -591,7 +614,7 @@ function getWidgetColor(type: string) {
           top: 50%;
           left: 50%;
           z-index: 1;
-          color: var.$color-configurator;
+          color: rgba(var.$color-dark, 0.95);
           font-size: 1.5rem;
           transform: translate(-50%, -50%) scale(0.5);
           opacity: 0;
@@ -628,13 +651,13 @@ function getWidgetColor(type: string) {
         width: 100%;
         height: 2.6rem;
         object-fit: cover;
-        border-radius: 0.4rem;
-        box-shadow: 0 0 0.05em 0.2em var.$color-configurator;
+        border-radius: 0.5rem;
+        box-shadow: 0 0 0.05em 0.2em rgba(var.$color-dark, 0.92);
       }
 
       &.active .bg-image {
         box-shadow: 0 0 0 0.15em var.$color-accent,
-          0 0 0.05em 0.2em var.$color-configurator;
+          0 0 0.05em 0.2em rgba(var.$color-dark, 0.92);
       }
     }
   }
@@ -646,17 +669,17 @@ function getWidgetColor(type: string) {
     column-gap: 0.5rem;
 
     .bg-image-btn {
-      padding: 0.3rem 0.6rem;
+      padding: 0.4rem 0.7rem;
       color: var.$color-text;
       font-size: small;
-      background: color.adjust(var.$color-configurator, $lightness: 4%);
-      border: none;
-      border-radius: 0.4rem;
+      background: color.adjust(var.$color-dark, $lightness: 8%);
+      border: 1px solid var.$color-border-strong;
+      border-radius: 0.55rem;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, border-color 0.2s;
 
       &:hover {
-        background: color.adjust(var.$color-configurator, $lightness: 8%);
+        background: color.adjust(var.$color-dark, $lightness: 13%);
       }
     }
 
@@ -664,7 +687,7 @@ function getWidgetColor(type: string) {
       width: 2.6rem;
       height: 2.6rem;
       object-fit: cover;
-      border-radius: 0.4rem;
+      border-radius: 0.5rem;
     }
   }
 
@@ -675,24 +698,29 @@ function getWidgetColor(type: string) {
   .widget-list {
     display: flex;
     flex-wrap: wrap;
+    gap: 0.4rem;
 
     .list-item {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: calc(100% / 4);
+      width: calc(100% / 4 - 0.3rem);
       height: 5rem;
       padding: 1rem;
-      border-radius: 0.8rem;
+      background: rgba(var.$color-dark, 0.45);
+      border: 1px solid transparent;
+      border-radius: 0.9rem;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, border-color 0.2s, transform 0.15s;
 
       &.selected.selected {
-        background-color: color.adjust(var.$color-configurator, $lightness: 6%);
+        background: rgba(var.$color-dark, 0.7);
+        border-color: rgba(var.$color-accent, 0.6);
       }
 
       &:hover {
-        background-color: color.adjust(var.$color-configurator, $lightness: 0%);
+        border-color: var.$color-border-strong;
+        transform: translateY(-1px);
       }
 
       & > :deep(svg) {

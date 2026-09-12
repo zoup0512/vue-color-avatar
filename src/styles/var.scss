@@ -1,18 +1,37 @@
 @use 'sass:color';
-$color-accent: hsl(241, 99%, 70%);
+
+// ---------------------------------------------------------------
+// Aurora Studio 设计令牌
+// 深墨蓝画布 + 极光渐变(靛蓝 → 青)+ 玻璃拟态面板
+// ---------------------------------------------------------------
+
+// ---------- 品牌色 ----------
+$color-accent: hsl(247, 92%, 70%); // 靛蓝(主色)
 $color-primary: $color-accent;
-$color-secondary: hsl(186, 84%, 74%);
-$color-text: hsl(211, 19%, 70%);
-$color-dark: hsl(216, 14%, 14%);
-$color-gray: color.adjust($color-dark, $lightness: 5%);
-$color-page-bg: color.adjust($color-dark, $lightness: -5%);
-$color-configurator: $color-dark;
+$color-secondary: hsl(188, 86%, 62%); // 青色(辅助色)
+
+// ---------- 文字 ----------
+$color-text: hsl(222, 22%, 76%);
+$color-text-strong: hsl(220, 45%, 96%);
+$color-text-muted: hsl(222, 14%, 54%);
+
+// ---------- 表面 ----------
+$color-dark: hsl(232, 20%, 12%); // 面板基底
+$color-gray: color.adjust($color-dark, $lightness: 6%); // 控件 / 卡片
+$color-page-bg: hsl(233, 24%, 7%); // 页面画布
+$color-configurator: hsla(231, 24%, 11%, 0.92); // 侧栏(半透明配毛玻璃)
 $color-stroke: $color-text;
 
-$layout-header-height: 6rem;
-$layout-sider-width: 20rem;
-$layout-footer-height: 4rem;
+// ---------- 发丝边框(玻璃面板)----------
+$color-border: hsla(220, 60%, 80%, 0.09);
+$color-border-strong: hsla(220, 60%, 80%, 0.16);
 
+// ---------- 布局 ----------
+$layout-header-height: 4.5rem;
+$layout-sider-width: 21rem;
+$layout-footer-height: 3.5rem;
+
+// ---------- 断点 ----------
 $screen-sm: 480px;
 $screen-md: 768px;
 $screen-lg: 976px;
