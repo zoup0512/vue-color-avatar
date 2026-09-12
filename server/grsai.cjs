@@ -72,7 +72,7 @@ function validateGenerateInput(value) {
 
 function buildUpstreamPayload({ image, prompt }) {
   return {
-    model: 'gpt-image-2',
+    model: 'gpt-image-2.5',
     prompt,
     images: [image],
     aspectRatio: '1024x1024',

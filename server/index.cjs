@@ -29,7 +29,7 @@ const HISTORY_FILE_PREFIX = '/avatar/api/history/files/'
 const MAX_REQUEST_BYTES = Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 16 * 1024
 const MAX_UPSTREAM_RESPONSE_BYTES = 1024 * 1024
 const MAX_DOWNLOAD_BYTES = 16 * 1024 * 1024
-// gpt-image-2 带参考图的图生图单次耗时通常 60–150s，60s 会稳定超时。
+// gpt-image 系列带参考图的图生图单次耗时通常 60–150s，60s 会稳定超时。
 // 这里留到 180s，仍在 nginx proxy_read_timeout (300s) 之内，避免连接被 nginx 提前关闭。
 const UPSTREAM_TIMEOUT_MS = 180 * 1000
 const DOWNLOAD_TIMEOUT_MS = 20 * 1000

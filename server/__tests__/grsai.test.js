@@ -55,7 +55,7 @@ describe('request validation', () => {
 describe('upstream payload', () => {
   test('uses the fixed Grsai model and options', () => {
     expect(buildUpstreamPayload({ image: 'data:image/png;base64,AA==', prompt: 'redraw' })).toEqual({
-      model: 'gpt-image-2',
+      model: 'gpt-image-2.5',
       prompt: 'redraw',
       images: ['data:image/png;base64,AA=='],
       aspectRatio: '1024x1024',
