@@ -144,23 +144,27 @@ async function make() {
   position: absolute;
   top: 50%;
   left: 50%;
+  display: flex;
+  flex-direction: column;
+  width: min(92vw, 1320px);
   height: min(90vh, 1000px);
   overflow: hidden;
   background-color: color.adjust(var.$color-dark, $lightness: 3%);
-  border-radius: 1rem;
+  border: 1px solid var.$color-border-strong;
+  border-radius: 1.4rem;
+  box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.5);
   transform: translate(-50%, -50%);
 
-  $top-bar-height: 3.5rem;
+  $top-bar-height: 3.6rem;
 
   .top-bar {
-    position: absolute;
-    right: 0;
-    left: 0;
-    z-index: 10;
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     height: $top-bar-height;
-    padding: 1rem 2rem;
+    padding: 0 1.4rem;
+    color: var.$color-text-strong;
+    font-size: 0.95rem;
     background-color: color.adjust(var.$color-dark, $lightness: 6%);
 
     .right {
@@ -168,21 +172,20 @@ async function make() {
       align-items: center;
       margin-left: auto;
 
-      .download-btn {
-        color: #fff;
-        background-color: var.$color-accent;
-      }
-
       .regenerate-btn,
       .download-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 2rem;
-        margin-left: 1rem;
+        height: 2.1rem;
+        margin-left: 0.6rem;
         padding: 0 1rem;
-        border-radius: 0.4rem;
+        font: inherit;
+        font-size: 0.88rem;
+        border: 1px solid transparent;
+        border-radius: 2.1rem;
         cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s;
 
         &:disabled,
         &[disabled] {
@@ -190,23 +193,51 @@ async function make() {
           cursor: not-allowed;
         }
       }
+
+      .regenerate-btn {
+        color: var.$color-text;
+        background: color.adjust(var.$color-dark, $lightness: 10%);
+
+        &:hover:not(:disabled) {
+          border-color: var.$color-border-strong;
+        }
+      }
+
+      .download-btn {
+        color: #fff;
+        background: linear-gradient(
+          115deg,
+          var.$color-primary,
+          var.$color-secondary
+        );
+        box-shadow: 0 0.35rem 1rem rgba(var.$color-accent, 0.3);
+
+        &:hover:not(:disabled) {
+          box-shadow: 0 0.5rem 1.4rem rgba(var.$color-accent, 0.45);
+        }
+      }
     }
   }
 
   .content-box {
-    height: 100%;
-    padding: $top-bar-height 0rem 0rem 0rem;
+    flex: 1;
+    min-height: 0;
   }
 
   .content {
     z-index: 10;
     display: grid;
     grid-auto-rows: min-content;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.6rem;
     justify-content: space-between;
-    width: max(85vw, 1280px);
-    padding: 2rem;
+    padding: 1.6rem;
+
+    @media screen and (max-width: var.$screen-sm) {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
 
     .avatar-box {
       position: relative;
@@ -223,27 +254,33 @@ async function make() {
         align-items: center;
         justify-content: center;
         min-width: 6.6rem;
-        height: 2.3rem;
-        margin-left: 1rem;
+        height: 2.2rem;
         padding: 0 1rem;
-        color: var.$color-text;
-        font-weight: bold;
-        background: var.$color-gray;
-        border-radius: 0.4rem;
-        border-radius: 0.6rem;
+        color: #fff;
+        font-weight: 600;
+        background: rgba(var.$color-dark, 0.85);
+        border: 1px solid var.$color-border-strong;
+        border-radius: 2.2rem;
         transform: translateX(-50%);
         cursor: pointer;
         opacity: 0;
-        transition: color 0.2s;
+        transition: opacity 0.2s;
         user-select: none;
 
         &:hover {
-          color: color.adjust(var.$color-text, $lightness: 10%);
+          border-color: rgba(var.$color-accent, 0.55);
         }
       }
 
       &:hover .download-single {
         opacity: 1;
+      }
+
+      // 触屏没有 hover,长按场景直接常显下载按钮
+      @media (hover: none) {
+        .download-single {
+          opacity: 1;
+        }
       }
     }
   }

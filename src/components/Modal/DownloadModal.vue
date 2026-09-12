@@ -1,27 +1,29 @@
 <template>
-  <div
-    v-if="props.visible"
-    class="download-modal-wrapper"
-    @click="emit('close')"
-  >
-    <div class="download-modal" @click.stop>
-      <div class="modal-body">
-        <div class="avatar-preview">
-          <img
-            alt="vue-color-avatar"
-            :src="props.imageUrl"
-            class="avatar-img"
-          />
+  <Teleport to="body">
+    <div
+      v-if="props.visible"
+      class="download-modal-wrapper"
+      @click="emit('close')"
+    >
+      <div class="download-modal" @click.stop>
+        <div class="modal-body">
+          <div class="avatar-preview">
+            <img
+              alt="vue-color-avatar"
+              :src="props.imageUrl"
+              class="avatar-img"
+            />
+          </div>
+
+          <p class="tip">{{ t('text.downloadTip') }} 🥳</p>
         </div>
 
-        <p class="tip">{{ t('text.downloadTip') }} 🥳</p>
+        <button type="button" class="close-btn" @click="emit('close')">
+          {{ t('action.close') }}
+        </button>
       </div>
-
-      <button type="button" class="close-btn" @click="emit('close')">
-        {{ t('action.close') }}
-      </button>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script lang="ts" setup>
@@ -42,21 +44,21 @@ const { t } = useI18n()
 
 .download-modal-wrapper {
   position: fixed;
-  bottom: 0;
-  left: 50%;
+  top: 0;
+  left: 0;
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding: 2rem 0;
+  padding: 1.5rem;
   overflow: hidden;
-  transform: translate(-50%, 0);
-  backdrop-filter: blur(0.3rem);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(0.4rem);
 
-  @supports not (backdrop-filter: blur(0.3rem)) {
-    background-color: rgba(var.$color-dark, 0.8);
+  @supports not (backdrop-filter: blur(0.4rem)) {
+    background: rgba(0, 0, 0, 0.72);
   }
 }
 
@@ -65,9 +67,11 @@ const { t } = useI18n()
   width: 50%;
   min-width: 310px;
   max-width: 500px;
-  background-color: color.adjust(var.$color-dark, $lightness: -1%);
-  border: 0.15rem solid rgba(var.$color-accent, 0.8);
-  border-radius: 1rem;
+  overflow: hidden;
+  background: color.adjust(var.$color-dark, $lightness: 3%);
+  border: 1px solid var.$color-border-strong;
+  border-radius: 1.4rem;
+  box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.5);
 
   .modal-body {
     display: flex;
@@ -75,11 +79,13 @@ const { t } = useI18n()
     align-items: center;
     justify-content: center;
     height: 100%;
-    padding: 1.8rem 1.2rem 1rem 1.2rem;
+    padding: 2rem 1.4rem 1.4rem;
 
     .avatar-preview {
       width: 60%;
       margin: 0 auto;
+      background: rgba(var.$color-page-bg, 0.5);
+      border-radius: 1rem;
 
       @media screen and (max-width: var.$screen-md) {
         width: 80%;
@@ -99,7 +105,7 @@ const { t } = useI18n()
     .tip {
       max-width: 70%;
       margin: 0 auto;
-      padding: 1.5rem 0;
+      padding: 1.4rem 0 0.4rem;
       color: var.$color-text;
       font-size: 0.85rem;
       text-align: center;
@@ -108,26 +114,22 @@ const { t } = useI18n()
   }
 
   .close-btn {
-    position: absolute;
-    right: 1rem;
-    bottom: -1rem;
-    min-width: 5rem;
-    height: 2.5rem;
-    margin: 0 1rem;
-    margin-left: auto;
-    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 3rem;
     color: var.$color-text;
-    font-weight: bold;
-    background: var.$color-gray;
-    border-radius: 0.2rem;
-    border-radius: 0.6rem;
+    font-weight: 600;
+    background: rgba(var.$color-dark, 0.4);
+    border-top: 1px solid var.$color-border;
     cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
+    transition: color 0.2s, background-color 0.2s;
     user-select: none;
 
     &:hover {
-      color: color.adjust(var.$color-text, $lightness: 10%);
-      transform: translateY(-0.3rem);
+      color: var.$color-text-strong;
+      background: color.adjust(var.$color-dark, $lightness: 8%);
     }
   }
 }
